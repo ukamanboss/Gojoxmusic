@@ -2,26 +2,11 @@
 # Location: Supaul, Bihar
 #
 # All rights reserved.
-#
-# This code is the intellectual property of Nand Yaduwanshi.
-# You are not allowed to copy, modify, redistribute, or use this
-# code for commercial or personal projects without explicit permission.
-#
-# Allowed:
-# - Forking for personal learning
-# - Submitting improvements via pull requests
-#
-# Not Allowed:
-# - Claiming this code as your own
-# - Re-uploading without credit or permission
-# - Selling or using commercially
-#
-# Contact for permissions:
-# Email: badboy809075@gmail.com
-
 
 import math
 from pyrogram.types import InlineKeyboardButton
+from pyrogram.enums import ButtonStyle
+
 from ShrutiMusic.utils.formatters import time_to_seconds
 from config import BOT_USERNAME, SUPPORT_GROUP, SUPPORT_CHANNEL
 
@@ -30,18 +15,21 @@ def track_markup(_, videoid, user_id, channel, fplay):
     buttons = [
         [
             InlineKeyboardButton(
-                text=f"🎧 {_['P_B_1']}",
+                text=_["P_B_1"],
                 callback_data=f"MusicStream {videoid}|{user_id}|a|{channel}|{fplay}",
+                style=ButtonStyle.PRIMARY
             ),
             InlineKeyboardButton(
-                text=f"🎬 {_['P_B_2']}",
+                text=_["P_B_2"],
                 callback_data=f"MusicStream {videoid}|{user_id}|v|{channel}|{fplay}",
+                style=ButtonStyle.SUCCESS
             ),
         ],
         [
             InlineKeyboardButton(
-                text=f"🛑 {_['CLOSE_BUTTON']}",
+                text=_["CLOSE_BUTTON"],
                 callback_data=f"forceclose {videoid}|{user_id}",
+                style=ButtonStyle.DANGER
             )
         ],
     ]
@@ -51,8 +39,10 @@ def track_markup(_, videoid, user_id, channel, fplay):
 def stream_markup_timer(_, chat_id, played, dur):
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
+
     percentage = (played_sec / duration_sec) * 100
     umm = math.floor(percentage)
+
     if 0 < umm <= 10:
         bar = "◉—————————"
     elif 10 < umm < 20:
@@ -78,22 +68,56 @@ def stream_markup_timer(_, chat_id, played, dur):
         [
             InlineKeyboardButton(
                 text=f"{played} {bar} {dur}",
-                url=f"https://t.me/{BOT_USERNAME}?startgroup=true"
+                url=f"https://t.me/{BOT_USERNAME}?startgroup=true",
+                style=ButtonStyle.PRIMARY
             )
         ],
         [
-            # Player controls upgraded with Color blocks & VIP styling
-            InlineKeyboardButton(text="🟢 ▷", callback_data=f"ADMIN Resume|{chat_id}"),
-            InlineKeyboardButton(text="🟡 II", callback_data=f"ADMIN Pause|{chat_id}"),
-            InlineKeyboardButton(text="🔵 ↻", callback_data=f"ADMIN Replay|{chat_id}"),
-            InlineKeyboardButton(text="💠 ‣‣I", callback_data=f"ADMIN Skip|{chat_id}"),
-            InlineKeyboardButton(text="🟥 ▢", callback_data=f"ADMIN Stop|{chat_id}"),
+            InlineKeyboardButton(
+                text="▷",
+                callback_data=f"ADMIN Resume|{chat_id}",
+                style=ButtonStyle.SUCCESS
+            ),
+            InlineKeyboardButton(
+                text="II",
+                callback_data=f"ADMIN Pause|{chat_id}",
+                style=ButtonStyle.PRIMARY
+            ),
+            InlineKeyboardButton(
+                text="↻",
+                callback_data=f"ADMIN Replay|{chat_id}",
+                style=ButtonStyle.PRIMARY
+            ),
+            InlineKeyboardButton(
+                text="‣‣I",
+                callback_data=f"ADMIN Skip|{chat_id}",
+                style=ButtonStyle.PRIMARY
+            ),
+            InlineKeyboardButton(
+                text="▢",
+                callback_data=f"ADMIN Stop|{chat_id}",
+                style=ButtonStyle.DANGER
+            ),
         ],
         [
-            InlineKeyboardButton(text="💬 sᴜᴘᴘᴏʀᴛ", url=SUPPORT_GROUP),
-            InlineKeyboardButton(text="📢 ᴄʜᴀɴɴᴇʟ", url=SUPPORT_CHANNEL),
+            InlineKeyboardButton(
+                text="💬 sᴜᴘᴘᴏʀᴛ",
+                url=SUPPORT_GROUP,
+                style=ButtonStyle.PRIMARY
+            ),
+            InlineKeyboardButton(
+                text="📢 ᴄʜᴀɴɴᴇʟ",
+                url=SUPPORT_CHANNEL,
+                style=ButtonStyle.PRIMARY
+            ),
         ],
-        [InlineKeyboardButton(text=f"🛑 {_['CLOSE_BUTTON']}", callback_data="close")],
+        [
+            InlineKeyboardButton(
+                text=_["CLOSE_BUTTON"],
+                callback_data="close",
+                style=ButtonStyle.DANGER
+            )
+        ],
     ]
     return buttons
 
@@ -101,13 +125,39 @@ def stream_markup_timer(_, chat_id, played, dur):
 def stream_markup(_, chat_id):
     buttons = [
         [
-            InlineKeyboardButton(text="🟢 ▷", callback_data=f"ADMIN Resume|{chat_id}"),
-            InlineKeyboardButton(text="🟡 II", callback_data=f"ADMIN Pause|{chat_id}"),
-            InlineKeyboardButton(text="🔵 ↻", callback_data=f"ADMIN Replay|{chat_id}"),
-            InlineKeyboardButton(text="💠 ‣‣I", callback_data=f"ADMIN Skip|{chat_id}"),
-            InlineKeyboardButton(text="🟥 ▢", callback_data=f"ADMIN Stop|{chat_id}"),
+            InlineKeyboardButton(
+                text="▷",
+                callback_data=f"ADMIN Resume|{chat_id}",
+                style=ButtonStyle.SUCCESS
+            ),
+            InlineKeyboardButton(
+                text="II",
+                callback_data=f"ADMIN Pause|{chat_id}",
+                style=ButtonStyle.PRIMARY
+            ),
+            InlineKeyboardButton(
+                text="↻",
+                callback_data=f"ADMIN Replay|{chat_id}",
+                style=ButtonStyle.PRIMARY
+            ),
+            InlineKeyboardButton(
+                text="‣‣I",
+                callback_data=f"ADMIN Skip|{chat_id}",
+                style=ButtonStyle.PRIMARY
+            ),
+            InlineKeyboardButton(
+                text="▢",
+                callback_data=f"ADMIN Stop|{chat_id}",
+                style=ButtonStyle.DANGER
+            ),
         ],
-        [InlineKeyboardButton(text=f"🛑 {_['CLOSE_BUTTON']}", callback_data="close")],
+        [
+            InlineKeyboardButton(
+                text=_["CLOSE_BUTTON"],
+                callback_data="close",
+                style=ButtonStyle.DANGER
+            )
+        ],
     ]
     return buttons
 
@@ -116,18 +166,21 @@ def playlist_markup(_, videoid, user_id, ptype, channel, fplay):
     buttons = [
         [
             InlineKeyboardButton(
-                text=f"🎧 {_['P_B_1']}",
+                text=_["P_B_1"],
                 callback_data=f"NandPlaylists {videoid}|{user_id}|{ptype}|a|{channel}|{fplay}",
+                style=ButtonStyle.PRIMARY
             ),
             InlineKeyboardButton(
-                text=f"🎬 {_['P_B_2']}",
+                text=_["P_B_2"],
                 callback_data=f"NandPlaylists {videoid}|{user_id}|{ptype}|v|{channel}|{fplay}",
+                style=ButtonStyle.SUCCESS
             ),
         ],
         [
             InlineKeyboardButton(
-                text=f"🛑 {_['CLOSE_BUTTON']}",
+                text=_["CLOSE_BUTTON"],
                 callback_data=f"forceclose {videoid}|{user_id}",
+                style=ButtonStyle.DANGER
             ),
         ],
     ]
@@ -138,14 +191,16 @@ def livestream_markup(_, videoid, user_id, mode, channel, fplay):
     buttons = [
         [
             InlineKeyboardButton(
-                text=f"🔴 {_['P_B_3']}",
+                text=_["P_B_3"],
                 callback_data=f"LiveStream {videoid}|{user_id}|{mode}|{channel}|{fplay}",
+                style=ButtonStyle.SUCCESS
             ),
         ],
         [
             InlineKeyboardButton(
-                text=f"🛑 {_['CLOSE_BUTTON']}",
+                text=_["CLOSE_BUTTON"],
                 callback_data=f"forceclose {videoid}|{user_id}",
+                style=ButtonStyle.DANGER
             ),
         ],
     ]
@@ -154,41 +209,36 @@ def livestream_markup(_, videoid, user_id, mode, channel, fplay):
 
 def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
     query = f"{query[:20]}"
+
     buttons = [
         [
             InlineKeyboardButton(
-                text=f"🎧 {_['P_B_1']}",
+                text=_["P_B_1"],
                 callback_data=f"MusicStream {videoid}|{user_id}|a|{channel}|{fplay}",
+                style=ButtonStyle.PRIMARY
             ),
             InlineKeyboardButton(
-                text=f"🎬 {_['P_B_2']}",
+                text=_["P_B_2"],
                 callback_data=f"MusicStream {videoid}|{user_id}|v|{channel}|{fplay}",
+                style=ButtonStyle.SUCCESS
             ),
         ],
         [
             InlineKeyboardButton(
-                text="◁ 𝐁𝐚𝐜𝐤",
+                text="◁",
                 callback_data=f"slider B|{query_type}|{query}|{user_id}|{channel}|{fplay}",
+                style=ButtonStyle.PRIMARY
             ),
             InlineKeyboardButton(
-                text=f"🛑 {_['CLOSE_BUTTON']}",
+                text=_["CLOSE_BUTTON"],
                 callback_data=f"forceclose {query}|{user_id}",
+                style=ButtonStyle.DANGER
             ),
             InlineKeyboardButton(
-                text="𝐍𝐞𝐱𝐭 ▷",
+                text="▷",
                 callback_data=f"slider F|{query_type}|{query}|{user_id}|{channel}|{fplay}",
+                style=ButtonStyle.PRIMARY
             ),
         ],
     ]
     return buttons
-
-
-# ©️ Copyright Reserved - @NoxxOP  Nand Yaduwanshi
-
-# ===========================================
-# ©️ 2025 Nand Yaduwanshi (aka @NoxxOP)
-# 🔗 GitHub : https://github.com/NoxxOP/ShrutiMusic
-# 📢 Telegram Channel : https://t.me/ShrutiBots
-# ===========================================
-
-# ❤️ Love From ShrutiBots

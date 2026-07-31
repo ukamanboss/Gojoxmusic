@@ -27,13 +27,13 @@ def start_panel(_):
     buttons = [
         [
             InlineKeyboardButton(
-                text=_["S_B_1"], url=f"https://t.me/{app.username}?startgroup=true"
+                text=f"🟩 {_['S_B_1']}", url=f"https://t.me/{app.username}?startgroup=true"
             ),
-            InlineKeyboardButton(text=_["S_B_2"], url=config.SUPPORT_GROUP),
+            InlineKeyboardButton(text=f"🟦 {_['S_B_2']}", url=config.SUPPORT_GROUP),
         ],
         [
-            InlineKeyboardButton(text=_["E_X_1"], url=config.UPSTREAM_REPO),
-            InlineKeyboardButton(text=_["S_B_11"], callback_data="about_page")  # About button
+            InlineKeyboardButton(text=f"🟧 {_['E_X_1']}", url=config.UPSTREAM_REPO),
+            InlineKeyboardButton(text=f"🟥 {_['S_B_11']}", callback_data="about_page")  # About button
         ],
     ]
     return buttons
@@ -42,29 +42,29 @@ def private_panel(_):
     buttons = [
         [
             InlineKeyboardButton(
-                text=_["S_B_3"],
+                text=f"✨ 𝐀𝐝𝐝 𝐌𝐞 𝐓𝐨 𝐘𝐨𝐮𝐫 𝐆𝐫𝐨𝐮𝐩 ✨", # Custom VIP Text
                 url=f"https://t.me/{app.username}?startgroup=true",
             )
         ],
         [
             InlineKeyboardButton(
-                text=_["S_B_11"],
+                text=f"🟥 {_['S_B_11']} ℹ️",
                 callback_data="about_page"
             ),
             InlineKeyboardButton(
-                text=_["S_B_12"],
+                text=f"🟦 𝐎𝐰𝐧𝐞𝐫 👑", # Replaced variable for direct Boss look
                 callback_data="owner_page"
             )
         ],
         [
             InlineKeyboardButton(
-                text=_["E_X_1"],
+                text=f"🟩 {_['E_X_1']} 💻",
                 callback_data="fork_repo"
             ),
-            InlineKeyboardButton(text=_["S_B_5"], user_id=config.OWNER_ID),
+            InlineKeyboardButton(text=f"🟨 {_['S_B_5']} 🤞", user_id=config.OWNER_ID),
         ],
         [
-            InlineKeyboardButton(text=_["S_B_4"], callback_data="help_page_1")
+            InlineKeyboardButton(text=f"🟪 {_['S_B_4']} ❓", callback_data="help_page_1")
         ],
     ]
     return buttons
@@ -72,11 +72,11 @@ def private_panel(_):
 def about_panel(_):
     buttons = [
         [
-            InlineKeyboardButton(text=_["S_B_6"], url=config.SUPPORT_CHANNEL),
-            InlineKeyboardButton(text=_["S_B_2"], url=config.SUPPORT_GROUP),
+            InlineKeyboardButton(text=f"📢 {_['S_B_6']}", url=config.SUPPORT_CHANNEL),
+            InlineKeyboardButton(text=f"💬 {_['S_B_2']}", url=config.SUPPORT_GROUP),
         ],
         [
-            InlineKeyboardButton(text=_["BACK_BUTTON"], callback_data="settingsback_helper")
+            InlineKeyboardButton(text=f"🔙 {_['BACK_BUTTON']}", callback_data="settingsback_helper")
         ]
     ]
     return buttons
@@ -84,15 +84,15 @@ def about_panel(_):
 def owner_panel(_):
     buttons = [
         [
-            InlineKeyboardButton(text=_["S_H_1"], url=config.INSTAGRAM),
-            InlineKeyboardButton(text=_["S_H_2"], url=config.YOUTUBE),
+            InlineKeyboardButton(text=f"📸 {_['S_H_1']}", url=config.INSTAGRAM),
+            InlineKeyboardButton(text=f"▶️ {_['S_H_2']}", url=config.YOUTUBE),
         ],
         [
-            InlineKeyboardButton(text=_["S_H_3"], url=config.GITHUB),
-            InlineKeyboardButton(text=_["S_H_4"], url=config.DONATE),
+            InlineKeyboardButton(text=f"💻 {_['S_H_3']}", url=config.GITHUB),
+            InlineKeyboardButton(text=f"💰 {_['S_H_4']}", url=config.DONATE),
         ],
         [
-            InlineKeyboardButton(text=_["BACK_BUTTON"], callback_data="settingsback_helper")
+            InlineKeyboardButton(text=f"🔙 {_['BACK_BUTTON']}", callback_data="settingsback_helper")
         ]
     ]
     return buttons
@@ -105,6 +105,5 @@ def owner_panel(_):
 # 🔗 GitHub : https://github.com/NoxxOP/ShrutiMusic
 # 📢 Telegram Channel : https://t.me/ShrutiBots
 # ===========================================
-
 
 # ❤️ Love From ShrutiBots 

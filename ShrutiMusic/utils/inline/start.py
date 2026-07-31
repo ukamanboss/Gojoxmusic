@@ -1,109 +1,48 @@
-# Copyright (c) 2025 Nand Yaduwanshi <NoxxOP>
-# Location: Supaul, Bihar
-#
-# All rights reserved.
-#
-# This code is the intellectual property of Nand Yaduwanshi.
-# You are not allowed to copy, modify, redistribute, or use this
-# code for commercial or personal projects without explicit permission.
-#
-# Allowed:
-# - Forking for personal learning
-# - Submitting improvements via pull requests
-#
-# Not Allowed:
-# - Claiming this code as your own
-# - Re-uploading without credit or permission
-# - Selling or using commercially
-#
-# Contact for permissions:
-# Email: badboy809075@gmail.com
+import requests
+from config import BOT_TOKEN
 
-from pyrogram.types import InlineKeyboardButton
-import config
-from ShrutiMusic import app
-
-def start_panel(_):
-    buttons = [
-        [
-            InlineKeyboardButton(
-                text=f"🟩 {_['S_B_1']}", url=f"https://t.me/{app.username}?startgroup=true"
-            ),
-            InlineKeyboardButton(text=f"🟦 {_['S_B_2']}", url=config.SUPPORT_GROUP),
-        ],
-        [
-            InlineKeyboardButton(text=f"🟧 {_['E_X_1']}", url=config.UPSTREAM_REPO),
-            InlineKeyboardButton(text=f"🟥 {_['S_B_11']}", callback_data="about_page")  # About button
-        ],
-    ]
-    return buttons
-
-def private_panel(_):
-    buttons = [
-        [
-            InlineKeyboardButton(
-                text=f"✨ 𝐀𝐝𝐝 𝐌𝐞 𝐓𝐨 𝐘𝐨𝐮𝐫 𝐆𝐫𝐨𝐮𝐩 ✨", # Custom VIP Text
-                url=f"https://t.me/{app.username}?startgroup=true",
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=f"🟥 {_['S_B_11']} ℹ️",
-                callback_data="about_page"
-            ),
-            InlineKeyboardButton(
-                text=f"🟦 𝐎𝐰𝐧𝐞𝐫 👑", # Replaced variable for direct Boss look
-                callback_data="owner_page"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=f"🟩 {_['E_X_1']} 💻",
-                callback_data="fork_repo"
-            ),
-            InlineKeyboardButton(text=f"🟨 {_['S_B_5']} 🤞", user_id=config.OWNER_ID),
-        ],
-        [
-            InlineKeyboardButton(text=f"🟪 {_['S_B_4']} ❓", callback_data="help_page_1")
-        ],
-    ]
-    return buttons
-
-def about_panel(_):
-    buttons = [
-        [
-            InlineKeyboardButton(text=f"📢 {_['S_B_6']}", url=config.SUPPORT_CHANNEL),
-            InlineKeyboardButton(text=f"💬 {_['S_B_2']}", url=config.SUPPORT_GROUP),
-        ],
-        [
-            InlineKeyboardButton(text=f"🔙 {_['BACK_BUTTON']}", callback_data="settingsback_helper")
-        ]
-    ]
-    return buttons
-
-def owner_panel(_):
-    buttons = [
-        [
-            InlineKeyboardButton(text=f"📸 {_['S_H_1']}", url=config.INSTAGRAM),
-            InlineKeyboardButton(text=f"▶️ {_['S_H_2']}", url=config.YOUTUBE),
-        ],
-        [
-            InlineKeyboardButton(text=f"💻 {_['S_H_3']}", url=config.GITHUB),
-            InlineKeyboardButton(text=f"💰 {_['S_H_4']}", url=config.DONATE),
-        ],
-        [
-            InlineKeyboardButton(text=f"🔙 {_['BACK_BUTTON']}", callback_data="settingsback_helper")
-        ]
-    ]
-    return buttons
-
-
-# ©️ Copyright Reserved - @NoxxOP  Nand Yaduwanshi
-
-# ===========================================
-# ©️ 2025 Nand Yaduwanshi (aka @NoxxOP)
-# 🔗 GitHub : https://github.com/NoxxOP/ShrutiMusic
-# 📢 Telegram Channel : https://t.me/ShrutiBots
-# ===========================================
-
-# ❤️ Love From ShrutiBots 
+def send_custom_colored_menu(chat_id, text, reply_photo_url=None):
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    
+    # Agar photo ke sath bhejna ho toh endpoint 'sendPhoto' ho jayega
+    if reply_photo_url:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+        payload = {
+            "chat_id": chat_id,
+            "photo": reply_photo_url,
+            "caption": text,
+            "parse_mode": "HTML",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        # Blue Button (Primary Style)
+                        {"text": "Profile", "callback_data": "profile", "style": "primary"},
+                        # Red Button (Danger Style)
+                        {"text": "Buy VIP", "callback_data": "vip", "style": "danger"}
+                    ],
+                    [
+                        # Green Button (Success Style)
+                        {"text": "Refer & Earn", "callback_data": "earn", "style": "success"}
+                    ]
+                ]
+            }
+        }
+    else:
+        payload = {
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "HTML",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {"text": "Profile", "callback_data": "profile", "style": "primary"},
+                        {"text": "Buy VIP", "callback_data": "vip", "style": "danger"}
+                    ],
+                    [
+                        {"text": "Refer & Earn", "callback_data": "earn", "style": "success"}
+                    ]
+                ]
+            }
+        }
+    
+    requests.post(url, json=payload)

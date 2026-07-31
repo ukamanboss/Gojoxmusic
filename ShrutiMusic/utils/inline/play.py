@@ -30,17 +30,17 @@ def track_markup(_, videoid, user_id, channel, fplay):
     buttons = [
         [
             InlineKeyboardButton(
-                text=_["P_B_1"],
+                text=f"🎧 {_['P_B_1']}",
                 callback_data=f"MusicStream {videoid}|{user_id}|a|{channel}|{fplay}",
             ),
             InlineKeyboardButton(
-                text=_["P_B_2"],
+                text=f"🎬 {_['P_B_2']}",
                 callback_data=f"MusicStream {videoid}|{user_id}|v|{channel}|{fplay}",
             ),
         ],
         [
             InlineKeyboardButton(
-                text=_["CLOSE_BUTTON"],
+                text=f"🛑 {_['CLOSE_BUTTON']}",
                 callback_data=f"forceclose {videoid}|{user_id}",
             )
         ],
@@ -82,17 +82,18 @@ def stream_markup_timer(_, chat_id, played, dur):
             )
         ],
         [
-            InlineKeyboardButton(text="▷", callback_data=f"ADMIN Resume|{chat_id}"),
-            InlineKeyboardButton(text="II", callback_data=f"ADMIN Pause|{chat_id}"),
-            InlineKeyboardButton(text="↻", callback_data=f"ADMIN Replay|{chat_id}"),
-            InlineKeyboardButton(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}"),
-            InlineKeyboardButton(text="▢", callback_data=f"ADMIN Stop|{chat_id}"),
+            # Player controls upgraded with Color blocks & VIP styling
+            InlineKeyboardButton(text="🟢 ▷", callback_data=f"ADMIN Resume|{chat_id}"),
+            InlineKeyboardButton(text="🟡 II", callback_data=f"ADMIN Pause|{chat_id}"),
+            InlineKeyboardButton(text="🔵 ↻", callback_data=f"ADMIN Replay|{chat_id}"),
+            InlineKeyboardButton(text="💠 ‣‣I", callback_data=f"ADMIN Skip|{chat_id}"),
+            InlineKeyboardButton(text="🟥 ▢", callback_data=f"ADMIN Stop|{chat_id}"),
         ],
         [
             InlineKeyboardButton(text="💬 sᴜᴘᴘᴏʀᴛ", url=SUPPORT_GROUP),
             InlineKeyboardButton(text="📢 ᴄʜᴀɴɴᴇʟ", url=SUPPORT_CHANNEL),
         ],
-        [InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close")],
+        [InlineKeyboardButton(text=f"🛑 {_['CLOSE_BUTTON']}", callback_data="close")],
     ]
     return buttons
 
@@ -100,13 +101,13 @@ def stream_markup_timer(_, chat_id, played, dur):
 def stream_markup(_, chat_id):
     buttons = [
         [
-            InlineKeyboardButton(text="▷", callback_data=f"ADMIN Resume|{chat_id}"),
-            InlineKeyboardButton(text="II", callback_data=f"ADMIN Pause|{chat_id}"),
-            InlineKeyboardButton(text="↻", callback_data=f"ADMIN Replay|{chat_id}"),
-            InlineKeyboardButton(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}"),
-            InlineKeyboardButton(text="▢", callback_data=f"ADMIN Stop|{chat_id}"),
+            InlineKeyboardButton(text="🟢 ▷", callback_data=f"ADMIN Resume|{chat_id}"),
+            InlineKeyboardButton(text="🟡 II", callback_data=f"ADMIN Pause|{chat_id}"),
+            InlineKeyboardButton(text="🔵 ↻", callback_data=f"ADMIN Replay|{chat_id}"),
+            InlineKeyboardButton(text="💠 ‣‣I", callback_data=f"ADMIN Skip|{chat_id}"),
+            InlineKeyboardButton(text="🟥 ▢", callback_data=f"ADMIN Stop|{chat_id}"),
         ],
-        [InlineKeyboardButton(text=_["CLOSE_BUTTON"], callback_data="close")],
+        [InlineKeyboardButton(text=f"🛑 {_['CLOSE_BUTTON']}", callback_data="close")],
     ]
     return buttons
 
@@ -115,17 +116,17 @@ def playlist_markup(_, videoid, user_id, ptype, channel, fplay):
     buttons = [
         [
             InlineKeyboardButton(
-                text=_["P_B_1"],
+                text=f"🎧 {_['P_B_1']}",
                 callback_data=f"NandPlaylists {videoid}|{user_id}|{ptype}|a|{channel}|{fplay}",
             ),
             InlineKeyboardButton(
-                text=_["P_B_2"],
+                text=f"🎬 {_['P_B_2']}",
                 callback_data=f"NandPlaylists {videoid}|{user_id}|{ptype}|v|{channel}|{fplay}",
             ),
         ],
         [
             InlineKeyboardButton(
-                text=_["CLOSE_BUTTON"],
+                text=f"🛑 {_['CLOSE_BUTTON']}",
                 callback_data=f"forceclose {videoid}|{user_id}",
             ),
         ],
@@ -137,13 +138,13 @@ def livestream_markup(_, videoid, user_id, mode, channel, fplay):
     buttons = [
         [
             InlineKeyboardButton(
-                text=_["P_B_3"],
+                text=f"🔴 {_['P_B_3']}",
                 callback_data=f"LiveStream {videoid}|{user_id}|{mode}|{channel}|{fplay}",
             ),
         ],
         [
             InlineKeyboardButton(
-                text=_["CLOSE_BUTTON"],
+                text=f"🛑 {_['CLOSE_BUTTON']}",
                 callback_data=f"forceclose {videoid}|{user_id}",
             ),
         ],
@@ -156,25 +157,25 @@ def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
     buttons = [
         [
             InlineKeyboardButton(
-                text=_["P_B_1"],
+                text=f"🎧 {_['P_B_1']}",
                 callback_data=f"MusicStream {videoid}|{user_id}|a|{channel}|{fplay}",
             ),
             InlineKeyboardButton(
-                text=_["P_B_2"],
+                text=f"🎬 {_['P_B_2']}",
                 callback_data=f"MusicStream {videoid}|{user_id}|v|{channel}|{fplay}",
             ),
         ],
         [
             InlineKeyboardButton(
-                text="◁",
+                text="◁ 𝐁𝐚𝐜𝐤",
                 callback_data=f"slider B|{query_type}|{query}|{user_id}|{channel}|{fplay}",
             ),
             InlineKeyboardButton(
-                text=_["CLOSE_BUTTON"],
+                text=f"🛑 {_['CLOSE_BUTTON']}",
                 callback_data=f"forceclose {query}|{user_id}",
             ),
             InlineKeyboardButton(
-                text="▷",
+                text="𝐍𝐞𝐱𝐭 ▷",
                 callback_data=f"slider F|{query_type}|{query}|{user_id}|{channel}|{fplay}",
             ),
         ],
@@ -190,5 +191,4 @@ def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
 # 📢 Telegram Channel : https://t.me/ShrutiBots
 # ===========================================
 
-
-# ❤️ Love From ShrutiBots 
+# ❤️ Love From ShrutiBots

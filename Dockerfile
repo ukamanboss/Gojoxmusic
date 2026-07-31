@@ -12,4 +12,5 @@ WORKDIR /app/
 
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-CMD ["bash", "start"]
+CMD ["sh", "-c", "python3 -m http.server 10000 & python3 -m ShrutiMusic"]
+

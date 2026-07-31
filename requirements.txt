@@ -1,4 +1,4 @@
-pyrofork
+pyrofork>=2.2.0
 gTTS
 aiofiles
 aiohttp

@@ -23,6 +23,17 @@ from ShrutiMusic.utils.inline import help_pannel_page1, private_panel, start_pan
 from config import BANNED_USERS
 from strings import get_string
 
+# ═══════════════════════════════════════════════════════
+#             PREMIUM EMOJIS INJECTION
+# ═══════════════════════════════════════════════════════
+E_USER = "<emoji id='6194809138371904539'>👤</emoji>"
+E_UID = "<emoji id='5841276284155467413'>🔤</emoji>"
+E_LINK = "<emoji id='4916086774649848789'>🔗</emoji>"
+E_SEARCH = "<emoji id='5231200819986047254'>🔎</emoji>"
+E_SPARK = "<emoji id='5325513534392512971'>✨</emoji>"
+E_SHIELD = "<emoji id='5251203410396458957'>🛡️</emoji>"
+E_WARN = "<emoji id='6242010768825391425'>⚠️</emoji>"
+
 
 @app.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
 @LanguageStart
@@ -50,11 +61,11 @@ async def start_pm(client, message: Message, _):
             if await is_on_off(2):
                 return await app.send_message(
                     chat_id=config.LOG_GROUP_ID,
-                    text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>sᴜᴅᴏʟɪsᴛ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
+                    text=f"{E_SHIELD} {message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>sᴜᴅᴏʟɪsᴛ</b>.\n\n{E_UID} <b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n{E_LINK} <b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
                 )
             return
         if name[0:3] == "inf":
-            m = await message.reply_text("🔎")
+            m = await message.reply_text(f"{E_SEARCH} <b>sᴇᴀʀᴄʜɪɴɢ ᴛʀᴀᴄᴋ ɪɴғᴏ...</b>")
             query = (str(name)).replace("info_", "", 1)
             query = f"https://www.youtube.com/watch?v={query}"
             results = VideosSearch(query, limit=1)
@@ -97,7 +108,7 @@ async def start_pm(client, message: Message, _):
             if await is_on_off(2):
                 return await app.send_message(
                     chat_id=config.LOG_GROUP_ID,
-                    text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
+                    text=f"{E_SPARK} {message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n{E_UID} <b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n{E_LINK} <b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
                 )
         if name == "start":
             out = private_panel(_)
@@ -118,7 +129,7 @@ async def start_pm(client, message: Message, _):
             if await is_on_off(2):
                 return await app.send_message(
                     chat_id=config.LOG_GROUP_ID,
-                    text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
+                    text=f"{E_USER} {message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ.\n\n{E_UID} <b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n{E_LINK} <b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
                 )
     else:
         out = private_panel(_)
@@ -139,7 +150,7 @@ async def start_pm(client, message: Message, _):
         if await is_on_off(2):
             return await app.send_message(
                 chat_id=config.LOG_GROUP_ID,
-                text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
+                text=f"{E_USER} {message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ.\n\n{E_UID} <b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n{E_LINK} <b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
             )
 
 
@@ -177,7 +188,7 @@ async def welcome(client, message: Message):
                     pass
             if member.id == app.id:
                 if message.chat.type != ChatType.SUPERGROUP:
-                    await message.reply_text(_["start_4"])
+                    await message.reply_text(f"{E_WARN} {_['start_4']}")
                     return await app.leave_chat(message.chat.id)
                 if message.chat.id in await blacklisted_chats():
                     await message.reply_text(

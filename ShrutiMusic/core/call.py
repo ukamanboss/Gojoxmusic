@@ -1,24 +1,6 @@
 # Copyright (c) 2025 Nand Yaduwanshi <NoxxOP>
 # Location: Supaul, Bihar
-#
 # All rights reserved.
-#
-# This code is the intellectual property of Nand Yaduwanshi.
-# You are not allowed to copy, modify, redistribute, or use this
-# code for commercial or personal projects without explicit permission.
-#
-# Allowed:
-# - Forking for personal learning
-# - Submitting improvements via pull requests
-#
-# Not Allowed:
-# - Claiming this code as your own
-# - Re-uploading without credit or permission
-# - Selling or using commercially
-#
-# Contact for permissions:
-# Email: badboy809075@gmail.com
-
 
 import asyncio
 import os
@@ -35,7 +17,7 @@ from pytgcalls.exceptions import (
 )
 from pytgcalls.types import Update
 from pytgcalls.types.input_stream import AudioPiped, AudioVideoPiped
-from pytgcalls.types.input_stream.quality import HighQualityAudio, MediumQualityVideo
+from pytgcalls.types.input_stream.quality import HighQualityAudio, HighQualityVideo
 from pytgcalls.types.stream import StreamAudioEnded
 
 import config
@@ -136,38 +118,38 @@ class Call(PyTgCalls):
         try:
             await _clear_(chat_id)
             await assistant.leave_group_call(chat_id)
-        except:
+        except Exception:
             pass
 
     async def stop_stream_force(self, chat_id: int):
         try:
             if config.STRING1:
                 await self.one.leave_group_call(chat_id)
-        except:
+        except Exception:
             pass
         try:
             if config.STRING2:
                 await self.two.leave_group_call(chat_id)
-        except:
+        except Exception:
             pass
         try:
             if config.STRING3:
                 await self.three.leave_group_call(chat_id)
-        except:
+        except Exception:
             pass
         try:
             if config.STRING4:
                 await self.four.leave_group_call(chat_id)
-        except:
+        except Exception:
             pass
         try:
             if config.STRING5:
                 await self.five.leave_group_call(chat_id)
-        except:
+        except Exception:
             pass
         try:
             await _clear_(chat_id)
-        except:
+        except Exception:
             pass
 
     async def speedup_stream(self, chat_id: int, file_path, speed, playing):
@@ -214,7 +196,7 @@ class Call(PyTgCalls):
             AudioVideoPiped(
                 out,
                 audio_parameters=HighQualityAudio(),
-                video_parameters=MediumQualityVideo(),
+                video_parameters=HighQualityVideo(),
                 additional_ffmpeg_parameters=f"-ss {played} -to {duration}",
             )
             if playing[0]["streamtype"] == "video"
@@ -244,13 +226,13 @@ class Call(PyTgCalls):
         try:
             check = db.get(chat_id)
             check.pop(0)
-        except:
+        except Exception:
             pass
         await remove_active_video_chat(chat_id)
         await remove_active_chat(chat_id)
         try:
             await assistant.leave_group_call(chat_id)
-        except:
+        except Exception:
             pass
 
     async def skip_stream(
@@ -265,7 +247,7 @@ class Call(PyTgCalls):
             stream = AudioVideoPiped(
                 link,
                 audio_parameters=HighQualityAudio(),
-                video_parameters=MediumQualityVideo(),
+                video_parameters=HighQualityVideo(),
             )
         else:
             stream = AudioPiped(link, audio_parameters=HighQualityAudio())
@@ -280,7 +262,7 @@ class Call(PyTgCalls):
             AudioVideoPiped(
                 file_path,
                 audio_parameters=HighQualityAudio(),
-                video_parameters=MediumQualityVideo(),
+                video_parameters=HighQualityVideo(),
                 additional_ffmpeg_parameters=f"-ss {to_seek} -to {duration}",
             )
             if mode == "video"
@@ -317,14 +299,14 @@ class Call(PyTgCalls):
             stream = AudioVideoPiped(
                 link,
                 audio_parameters=HighQualityAudio(),
-                video_parameters=MediumQualityVideo(),
+                video_parameters=HighQualityVideo(),
             )
         else:
             stream = (
                 AudioVideoPiped(
                     link,
                     audio_parameters=HighQualityAudio(),
-                    video_parameters=MediumQualityVideo(),
+                    video_parameters=HighQualityVideo(),
                 )
                 if video
                 else AudioPiped(link, audio_parameters=HighQualityAudio())
@@ -365,11 +347,11 @@ class Call(PyTgCalls):
             if not check:
                 await _clear_(chat_id)
                 return await client.leave_group_call(chat_id)
-        except:
+        except Exception:
             try:
                 await _clear_(chat_id)
                 return await client.leave_group_call(chat_id)
-            except:
+            except Exception:
                 return
         else:
             queued = check[0]["file"]
@@ -399,7 +381,7 @@ class Call(PyTgCalls):
                     stream = AudioVideoPiped(
                         link,
                         audio_parameters=HighQualityAudio(),
-                        video_parameters=MediumQualityVideo(),
+                        video_parameters=HighQualityVideo(),
                     )
                 else:
                     stream = AudioPiped(
@@ -437,7 +419,7 @@ class Call(PyTgCalls):
                         videoid=True,
                         video=True if str(streamtype) == "video" else False,
                     )
-                except:
+                except Exception:
                     return await mystic.edit_text(
                         _["call_6"], disable_web_page_preview=True
                     )
@@ -445,7 +427,7 @@ class Call(PyTgCalls):
                     stream = AudioVideoPiped(
                         file_path,
                         audio_parameters=HighQualityAudio(),
-                        video_parameters=MediumQualityVideo(),
+                        video_parameters=HighQualityVideo(),
                     )
                 else:
                     stream = AudioPiped(
@@ -454,7 +436,7 @@ class Call(PyTgCalls):
                     )
                 try:
                     await client.change_stream(chat_id, stream)
-                except:
+                except Exception:
                     return await app.send_message(
                         original_chat_id,
                         text=_["call_6"],
@@ -480,14 +462,14 @@ class Call(PyTgCalls):
                     AudioVideoPiped(
                         videoid,
                         audio_parameters=HighQualityAudio(),
-                        video_parameters=MediumQualityVideo(),
+                        video_parameters=HighQualityVideo(),
                     )
                     if str(streamtype) == "video"
                     else AudioPiped(videoid, audio_parameters=HighQualityAudio())
                 )
                 try:
                     await client.change_stream(chat_id, stream)
-                except:
+                except Exception:
                     return await app.send_message(
                         original_chat_id,
                         text=_["call_6"],
@@ -506,7 +488,7 @@ class Call(PyTgCalls):
                     stream = AudioVideoPiped(
                         queued,
                         audio_parameters=HighQualityAudio(),
-                        video_parameters=MediumQualityVideo(),
+                        video_parameters=HighQualityVideo(),
                     )
                 else:
                     stream = AudioPiped(
@@ -515,7 +497,7 @@ class Call(PyTgCalls):
                     )
                 try:
                     await client.change_stream(chat_id, stream)
-                except:
+                except Exception:
                     return await app.send_message(
                         original_chat_id,
                         text=_["call_6"],
@@ -621,15 +603,5 @@ class Call(PyTgCalls):
 
 
 Nand = Call()
-
-
-# ©️ Copyright Reserved - @NoxxOP  Nand Yaduwanshi
-
-# ===========================================
-# ©️ 2025 Nand Yaduwanshi (aka @NoxxOP)
-# 🔗 GitHub : https://github.com/NoxxOP/ShrutiMusic
-# 📢 Telegram Channel : https://t.me/ShrutiBots
-# ===========================================
-
 
 # ❤️ Love From ShrutiBots 

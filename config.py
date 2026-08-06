@@ -5,6 +5,15 @@ from pyrogram import filters
 
 load_dotenv()
 
+# ============================================================
+# ⚡ PERFORMANCE & OPTIMIZATION SETTINGS ⚡
+# ============================================================
+# Pyrogram Workers: Boosts concurrent processing speed to prevent lag
+WORKERS = int(os.getenv("WORKERS", "300"))
+# Limit async tasks to keep RAM usage stable
+MAX_CONCURRENT_TASKS = int(os.getenv("MAX_CONCURRENT_TASKS", "50"))
+# ============================================================
+
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")

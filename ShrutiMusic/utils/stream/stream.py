@@ -69,7 +69,7 @@ async def stream(
                     thumbnail,
                     vidid,
                 ) = await YouTube.details(search, False if spotify else True)
-            except:
+            except Exception:
                 continue
             if str(duration_min) == "None":
                 continue
@@ -99,7 +99,7 @@ async def stream(
                     file_path, direct = await YouTube.download(
                         vidid, mystic, video=status, videoid=True
                     )
-                except:
+                except Exception:
                     raise AssistantErr(_["play_14"])
                 await Nand.join_call(
                     chat_id,
@@ -170,7 +170,7 @@ async def stream(
             file_path, direct = await YouTube.download(
                 vidid, mystic, videoid=True, video=status
             )
-        except:
+        except Exception:
             raise AssistantErr(_["play_14"])
 
         if await is_active_chat(chat_id):
@@ -447,7 +447,10 @@ async def stream(
             )
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
-            await mystic.delete()
+            try:
+                await mystic.delete()
+            except Exception:
+                pass
 
 
 # ©️ Copyright Reserved - @NoxxOP  Nand Yaduwanshi
@@ -459,4 +462,4 @@ async def stream(
 # ===========================================
 
 
-# ❤️ Love From ShrutiBots 
+# ❤️ Love From ShrutiBots

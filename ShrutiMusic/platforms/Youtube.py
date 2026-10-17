@@ -1,3 +1,7 @@
+# Copyright (c) 2025 Nand Yaduwanshi <NoxxOP>
+# Location: Supaul, Bihar
+# All rights reserved.
+
 import asyncio
 import os
 import re
@@ -8,7 +12,10 @@ from pyrogram.types import Message
 from py_yt import VideosSearch, Playlist
 import aiohttp
 
-API_URL = os.environ.get("SHRUTI_API_URL", "https://api.shrutibots.site")
+# ==========================================
+# 🛑 UPDATED API URL (Switched to new domain .in)
+# ==========================================
+API_URL = os.environ.get("SHRUTI_API_URL", "https://api.shrutibots.in")
 
 API_KEY = os.environ.get("SHRUTI_API_KEY", "YOUR_API_KEY") ## Get This API KEY FROM TELEGRAM BOT USERNAME: @SHRUTIAPIBOT 
 

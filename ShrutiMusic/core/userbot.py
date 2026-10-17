@@ -40,7 +40,7 @@ class Userbot:
         for center in SUPPORT_CENTERS:
             try:
                 await client.join_chat(center)
-                await asyncio.sleep(0.5) # Prevent FloodWait on join
+                await asyncio.sleep(0.5)
             except FloodWait as e:
                 await asyncio.sleep(e.value + 1)
             except Exception:
@@ -52,15 +52,13 @@ class Userbot:
             session_strings = []
             
             for i, session in enumerate([config.STRING1, config.STRING2, config.STRING3, config.STRING4, config.STRING5], start=1):
-                if session:
+                if session and str(session).strip() not in ["None", "False", ""]:
                     active_sessions.append(str(i))
                     session_strings.append(f"<b>STRING{i}:</b> <code>{session[:15]}...{session[-5:]}</code>")
                 else:
                     session_strings.append(f"<b>STRING{i}:</b> <code>Inactive</code>")
             
             session_status = ", ".join(active_sessions) if active_sessions else "None"
-            
-            # Security Upgrade: Masking sensitive Bot Token
             masked_token = f"{config.BOT_TOKEN[:10]}...{config.BOT_TOKEN[-5:]}" if config.BOT_TOKEN else "None"
             
             message = f"""<b>📋 𝐂𝐨𝐧𝐟𝐢𝐠 𝐕𝐚𝐫𝐢𝐚𝐛𝐥𝐞𝐬 𝐒𝐭𝐚𝐭𝐮𝐬</b>
@@ -89,7 +87,7 @@ class Userbot:
 
     async def send_help_message(self, bot_username):
         try:
-            message = f"✅ <b>@{bot_username} Sʏsᴛᴇᴍs Oɴʟɪɴᴇ !</b>\n\n👑 <b>Oᴡɴᴇʀ:</b> {config.OWNER_USERNAME}"
+            message = f"✅ <b>@{bot_username} Sʏsᴛᴇᴍs Oɴ𝚕𝚒𝚗𝚎 !</b>\n\n👑 <b>Oᴡɴᴇ𝚛:</b> {config.OWNER_USERNAME}"
             if assistants:
                 active_client = getattr(self, ["one", "two", "three", "four", "five"][assistants[0]-1])
                 await active_client.send_message(config.DT_Management, message)
@@ -99,7 +97,6 @@ class Userbot:
     async def start(self):
         LOGGER(__name__).info("Booting up Assistant Engines...")
         
-        # Smart dynamic loop for 5 assistants (Zero Code Repetition)
         assistant_clients = [
             (self.one, config.STRING1, 1),
             (self.two, config.STRING2, 2),
@@ -109,8 +106,13 @@ class Userbot:
         ]
 
         for client, session, num in assistant_clients:
-            if session:
-                await client.start()
+            if session and str(session).strip() not in ["None", "False", ""]:
+                try:
+                    await client.start()
+                except Exception as e:
+                    LOGGER(__name__).error(f"❌ Assistant {num} Failed to Start! Invalid String Session: {e}")
+                    continue
+
                 await self.join_all_support_centers(client)
                 assistants.append(num)
                 
@@ -133,7 +135,7 @@ class Userbot:
         LOGGER(__name__).info("Stopping Assistants...")
         clients = [(self.one, config.STRING1), (self.two, config.STRING2), (self.three, config.STRING3), (self.four, config.STRING4), (self.five, config.STRING5)]
         for client, session in clients:
-            if session:
+            if session and str(session).strip() not in ["None", "False", ""]:
                 try:
                     await client.stop()
                 except Exception:

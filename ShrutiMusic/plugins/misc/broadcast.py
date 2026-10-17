@@ -1,31 +1,13 @@
 # Copyright (c) 2025 Nand Yaduwanshi <NoxxOP>
 # Location: Supaul, Bihar
-#
 # All rights reserved.
-#
-# This code is the intellectual property of Nand Yaduwanshi.
-# You are not allowed to copy, modify, redistribute, or use this
-# code for commercial or personal projects without explicit permission.
-#
-# Allowed:
-# - Forking for personal learning
-# - Submitting improvements via pull requests
-#
-# Not Allowed:
-# - Claiming this code as your own
-# - Re-uploading without credit or permission
-# - Selling or using commercially
-#
-# Contact for permissions:
-# Email: badboy809075@gmail.com
-
 
 import asyncio
 import base64
 
 from pyrogram import filters
 from pyrogram.enums import ChatMembersFilter
-from pyrogram.errors import FloodWait
+from pyrogram.errors import FloodWait, UserIsBlocked, ChatWriteForbidden
 
 from ShrutiMusic import app
 from ShrutiMusic.misc import SUDOERS
@@ -58,7 +40,7 @@ async def braodcast_message(client, message, _):
 
     if "-wfchat" in message.text or "-wfuser" in message.text:
         if not message.reply_to_message or not (message.reply_to_message.photo or message.reply_to_message.text):
-            return await message.reply_text("Please reply to a text or image message for broadcasting.")
+            return await message.reply_text("✦ **Pʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴛᴇxᴛ ᴏʀ ɪᴍᴀɢᴇ ᴍᴇssᴀɢᴇ ғᴏʀ ʙʀᴏᴀᴅᴄᴀsᴛɪɴɢ.**")
 
         if message.reply_to_message.photo:
             content_type = 'photo'
@@ -86,12 +68,14 @@ async def braodcast_message(client, message, _):
                         else:
                             await app.send_message(chat_id=i, text=text_content, reply_markup=reply_markup)
                     sent_chats += 1
-                    await asyncio.sleep(0.2)
+                    await asyncio.sleep(0.2) # Safe delay
                 except FloodWait as fw:
-                    await asyncio.sleep(fw.x)
-                except:
+                    await asyncio.sleep(fw.value + 1) # FIXED: fw.x is invalid in Pyrogram V2
+                except (ChatWriteForbidden, UserIsBlocked):
+                    continue # Ignore dead chats
+                except Exception:
                     continue
-            await message.reply_text(f"Broadcast to chats completed! Sent to {sent_chats} chats.")
+            await message.reply_text(f"✅ **Bʀᴏᴀᴅᴄᴀsᴛ ᴛᴏ ᴄʜᴀᴛs ᴄᴏᴍᴘʟᴇᴛᴇᴅ! Sᴇɴᴛ ᴛᴏ {sent_chats} ᴄʜᴀᴛs.**")
 
         if "-wfuser" in message.text:
             sent_users = 0
@@ -108,10 +92,12 @@ async def braodcast_message(client, message, _):
                     sent_users += 1
                     await asyncio.sleep(0.2)
                 except FloodWait as fw:
-                    await asyncio.sleep(fw.x)
-                except:
+                    await asyncio.sleep(fw.value + 1) # FIXED
+                except (ChatWriteForbidden, UserIsBlocked):
                     continue
-            await message.reply_text(f"Broadcast to users completed! Sent to {sent_users} users.")
+                except Exception:
+                    continue
+            await message.reply_text(f"✅ **Bʀᴏᴀᴅᴄᴀsᴛ ᴛᴏ ᴜsᴇʀs ᴄᴏᴍᴘʟᴇᴛᴇᴅ! Sᴇɴᴛ ᴛᴏ {sent_users} ᴜsᴇʀs.**")
 
         IS_BROADCASTING = False
         return
@@ -126,18 +112,9 @@ async def braodcast_message(client, message, _):
         if len(message.command) < 2:
             return await message.reply_text(_["broad_2"])
         query = message.text.split(None, 1)[1]
-        if "-pin" in query:
-            query = query.replace("-pin", "")
-        if "-nobot" in query:
-            query = query.replace("-nobot", "")
-        if "-pinloud" in query:
-            query = query.replace("-pinloud", "")
-        if "-assistant" in query:
-            query = query.replace("-assistant", "")
-        if "-user" in query:
-            query = query.replace("-user", "")
-        if "-forward" in query:
-            query = query.replace("-forward", "")
+        for flag in ["-pin", "-nobot", "-pinloud", "-assistant", "-user", "-forward"]:
+            if flag in query:
+                query = query.replace(flag, "").strip()
         if query == "":
             return await message.reply_text(_["broad_8"])
 
@@ -147,10 +124,8 @@ async def braodcast_message(client, message, _):
     if "-nobot" not in message.text:
         sent = 0
         pin = 0
-        chats = []
-        schats = await get_served_chats()
-        for chat in schats:
-            chats.append(int(chat["chat_id"]))
+        chats = [int(chat["chat_id"]) for chat in await get_served_chats()]
+        
         for i in chats:
             try:
                 if "-forward" in message.text and message.reply_to_message:
@@ -166,34 +141,32 @@ async def braodcast_message(client, message, _):
                     try:
                         await m.pin(disable_notification=True)
                         pin += 1
-                    except:
-                        continue
+                    except Exception:
+                        pass
                 elif "-pinloud" in message.text:
                     try:
                         await m.pin(disable_notification=False)
                         pin += 1
-                    except:
-                        continue
+                    except Exception:
+                        pass
                 sent += 1
                 await asyncio.sleep(0.2)
             except FloodWait as fw:
                 flood_time = int(fw.value)
                 if flood_time > 200:
                     continue
-                await asyncio.sleep(flood_time)
-            except:
+                await asyncio.sleep(flood_time + 1)
+            except Exception:
                 continue
         try:
             await message.reply_text(_["broad_3"].format(sent, pin))
-        except:
+        except Exception:
             pass
 
     if "-user" in message.text:
         susr = 0
-        served_users = []
-        susers = await get_served_users()
-        for user in susers:
-            served_users.append(int(user["user_id"]))
+        served_users = [int(user["user_id"]) for user in await get_served_users()]
+        
         for i in served_users:
             try:
                 if "-forward" in message.text and message.reply_to_message:
@@ -210,12 +183,12 @@ async def braodcast_message(client, message, _):
                 flood_time = int(fw.value)
                 if flood_time > 200:
                     continue
-                await asyncio.sleep(flood_time)
-            except:
+                await asyncio.sleep(flood_time + 1)
+            except Exception:
                 pass
         try:
             await message.reply_text(_["broad_4"].format(susr))
-        except:
+        except Exception:
             pass
 
     if "-assistant" in message.text:
@@ -237,24 +210,27 @@ async def braodcast_message(client, message, _):
                             dialog.chat.id, text=query
                         )
                     sent += 1
-                    await asyncio.sleep(3)
+                    await asyncio.sleep(2) # Safe for userbots
                 except FloodWait as fw:
                     flood_time = int(fw.value)
                     if flood_time > 200:
                         continue
-                    await asyncio.sleep(flood_time)
-                except:
+                    await asyncio.sleep(flood_time + 1)
+                except Exception:
                     continue
             text += _["broad_7"].format(num, sent)
         try:
             await aw.edit_text(text)
-        except:
+        except Exception:
             pass
+            
     IS_BROADCASTING = False
 
 
 async def auto_clean():
-    while not await asyncio.sleep(10):
+    """Optimized background cleaner to prevent API spam"""
+    while True:
+        await asyncio.sleep(40) # Increased from 10s to 40s to save CPU & API Limits
         try:
             served_chats = await get_active_chats()
             for chat_id in served_chats:
@@ -269,20 +245,10 @@ async def auto_clean():
                     for user in authusers:
                         user_id = await alpha_to_int(user)
                         adminlist[chat_id].append(user_id)
-        except:
+        except Exception:
             continue
-
 
 asyncio.create_task(auto_clean())
 
-
 # ©️ Copyright Reserved - @NoxxOP  Nand Yaduwanshi
-
-# ===========================================
-# ©️ 2025 Nand Yaduwanshi (aka @NoxxOP)
-# 🔗 GitHub : https://github.com/NoxxOP/ShrutiMusic
-# 📢 Telegram Channel : https://t.me/ShrutiBots
-# ===========================================
-
-
 # ❤️ Love From ShrutiBots

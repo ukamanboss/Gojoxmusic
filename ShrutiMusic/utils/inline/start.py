@@ -1,87 +1,56 @@
-# Copyright (c) 2025 Nand Yaduwanshi <NoxxOP>
-# Location: Supaul, Bihar
+# Copyright (c) 2026 Nand Yaduwanshi <NoxxOP>
 # All rights reserved.
 
 from pyrogram.types import InlineKeyboardButton
 import config
 from ShrutiMusic import app
 
-# ============================================================
-# Smart Fix: Safe Button Factory
-# ============================================================
-def _button(text, callback_data=None, url=None, user_id=None, style=None):
-    """
-    Ye function error bypass karega aur perfectly normal button banayega 
-    taaki bot crash na ho aur smooth chale.
-    """
-    kwargs = {"text": text}
-    if callback_data is not None:
-        kwargs["callback_data"] = callback_data
-    if url is not None:
-        kwargs["url"] = url
-    if user_id is not None:
-        kwargs["user_id"] = user_id
 
-    return InlineKeyboardButton(**kwargs)
+def _get_safe_owner_url():
+    """Returns a safe URL for the owner button to prevent ButtonUserPrivacyRestricted crashes."""
+    owner_username = getattr(config, "OWNER_USERNAME", None)
+    if owner_username:
+        clean_username = str(owner_username).lstrip("@").strip()
+        if clean_username.startswith("http"):
+            return clean_username
+        return f"https://t.me/{clean_username}"
+    
+    # Fallback to support group if username isn't set, avoiding restricted tg://user?id= links
+    return getattr(config, "SUPPORT_GROUP", "https://t.me/Telegram")
 
 
 def start_panel(_):
-    return [
+    buttons = [
         [
-            _button(text=_["S_B_1"], url=f"https://t.me/{app.username}?startgroup=true"),
-            _button(text=_["S_B_2"], url=config.SUPPORT_GROUP),
-        ],
-        [
-            _button(text=_["E_X_1"], url=config.UPSTREAM_REPO),
-            _button(text=_["S_B_11"], callback_data="about_page"),
+            InlineKeyboardButton(
+                text=_["S_B_1"], url=f"https://t.me/{app.username}?startgroup=true"
+            ),
+            InlineKeyboardButton(text=_["S_B_2"], url=config.SUPPORT_GROUP),
         ],
     ]
+    return buttons
 
 
 def private_panel(_):
-    return [
+    owner_url = _get_safe_owner_url()
+
+    buttons = [
         [
-            _button(text=_["S_B_3"], url=f"https://t.me/{app.username}?startgroup=true")
+            InlineKeyboardButton(
+                text=_["S_B_3"],
+                url=f"https://t.me/{app.username}?startgroup=true",
+            )
         ],
         [
-            _button(text=_["S_B_11"], callback_data="about_page"),
-            _button(text=_["S_B_12"], callback_data="owner_page"),
+            InlineKeyboardButton(text=_["S_B_4"], callback_data="settings_back_helper"),
         ],
         [
-            _button(text=_["E_X_1"], callback_data="fork_repo"),
-            _button(text=_["S_B_5"], user_id=config.OWNER_ID),
+            InlineKeyboardButton(text=_["S_B_5"], url=owner_url),
+            InlineKeyboardButton(text=_["S_B_2"], url=config.SUPPORT_GROUP),
         ],
         [
-            _button(text=_["S_B_4"], callback_data="help_page_1")
+            InlineKeyboardButton(text=_["S_B_6"], url=config.SUPPORT_CHANNEL),
+            InlineKeyboardButton(text=_["S_B_7"], url=config.UPSTREAM_REPO),
         ],
     ]
-
-
-def about_panel(_):
-    return [
-        [
-            _button(text=_["S_B_6"], url=config.SUPPORT_CHANNEL),
-            _button(text=_["S_B_2"], url=config.SUPPORT_GROUP),
-        ],
-        [
-            _button(text=_["BACK_BUTTON"], callback_data="settingsback_helper")
-        ],
-    ]
-
-
-def owner_panel(_):
-    return [
-        [
-            _button(text=_["S_H_1"], url=config.INSTAGRAM),
-            _button(text=_["S_H_2"], url=config.YOUTUBE),
-        ],
-        [
-            _button(text=_["S_H_3"], url=config.GITHUB),
-            _button(text=_["S_H_4"], url=config.DONATE),
-        ],
-        [
-            _button(text=_["BACK_BUTTON"], callback_data="settingsback_helper")
-        ],
-    ]
-
-# ❤️ Love From ShrutiBots
+    return buttons

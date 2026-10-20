@@ -333,7 +333,7 @@ def build_thumbnail(base_img, videoid, title, duration, views, channel):
         x = eq_x + i * 13
         draw.rounded_rectangle(
             (x, eq_base - height, x + 7, eq_base),
-            radius=3, fill=(*accent, 200 if i in (1, 3, 5) else 100)
+            radius=2, fill=(*accent, 200 if i in (1, 3, 5) else 100)
         )
 
     output = CACHE_DIR / f"{videoid}_final.png"

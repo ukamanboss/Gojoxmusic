@@ -196,7 +196,7 @@ def _render_sync(
     # Remove black top/bottom bars from standard 4:3 YT thumbs before square crop
     w, h = base_img.size
     crop_h = int(h * 0.75) if h / w > 0.7 else h
-    top_ trim = (h - crop_h) // 2
+    top_trim = (h - crop_h) // 2
     cropped_src = base_img.crop((0, top_trim, w, top_trim + crop_h))
 
     min_dim = min(cropped_src.width, cropped_src.height)

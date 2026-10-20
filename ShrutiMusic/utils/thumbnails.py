@@ -55,7 +55,6 @@ def _clean_bot_brand() -> str:
     except Exception:
         decoded_name = str(raw_name)
 
-    # Keep only alphanumeric words from fancy unicode bot names
     alpha_words = re.findall(r"[A-Za-z0-9]+", decoded_name)
     clean_name = " ".join(alpha_words).strip()
 
@@ -227,7 +226,7 @@ def _render_sync(
         width=2,
     )
 
-    # 3. FULL 16:9 WIDESCREEN SONG THUMBNAIL ON LEFT (NO CUTTING FACES/POSTER TEXT)
+    # 3. FULL 16:9 WIDESCREEN SONG THUMBNAIL ON LEFT
     art_w, art_h = 490, 285
     art_x = 78
     art_y = 152
@@ -244,7 +243,6 @@ def _render_sync(
     bg = Image.alpha_composite(bg, glass)
     bg = Image.alpha_composite(bg, glow_layer)
 
-    # Trim black letterbox bars from 4:3 thumbnails (hqdefault/sddefault) to clean 16:9
     w, h = base_img.size
     if (h / float(max(w, 1))) > 0.68:
         new_h = int(w * 9 / 16)
@@ -278,7 +276,7 @@ def _render_sync(
     except Exception:
         font_title = font_sub = font_meta = font_badge = font_time = ImageFont.load_default()
 
-    # 5. LEFT BOTTOM INFO CARD (BELOW SONG THUMBNAIL)
+    # 5. LEFT BOTTOM INFO CARD
     info_card_y = art_y + art_h + 26
     info_card_h = 152
     draw.rounded_rectangle(
@@ -295,7 +293,7 @@ def _render_sync(
     draw.text((art_x + 22, info_card_y + 62), "Audio :  High Quality Stream", fill=(*accent, 245), font=font_meta)
     draw.text((art_x + 22, info_card_y + 102), f"Bot :  {bot_display}", fill=(195, 195, 215, 240), font=font_meta)
 
-    # 6. TOP HEADER BAR (NOW PLAYING + YOUR BOT NAME)
+    # 6. TOP HEADER BAR
     header_y = 72
     draw.rounded_rectangle(
         [78, header_y, 298, header_y + 42],
@@ -319,11 +317,10 @@ def _render_sync(
     )
     draw.text((bot_box_x1 + 22, header_y + 9), clean_bot_top, fill=(255, 255, 255, 250), font=font_badge)
 
-    # 7. RIGHT SIDE DETAILS (SONG NAME, CHANNEL, VIEWS, DURATION)
+    # 7. RIGHT SIDE DETAILS
     text_x = art_x + art_w + 42
     max_text_w = (CANVAS_W - 78) - text_x
 
-    # Song Title (2 Lines Max)
     clean_song_title = _clean_text(title, "Unknown Track")
     title_lines = wrap_and_truncate(draw, clean_song_title, font_title, max_text_w, max_lines=2)
     title_y = art_y + 2
@@ -332,18 +329,15 @@ def _render_sync(
         draw.text((text_x, title_y), line, fill=(255, 255, 255, 255), font=font_title)
         title_y += 50
 
-    # Channel / Artist Name
     chan_y = art_y + 120
     clean_artist = _clean_text(channel, "Official Channel")
     chan_line = wrap_and_truncate(draw, f"Channel :  {clean_artist}", font_sub, max_text_w, max_lines=1)[0]
     draw.text((text_x, chan_y), chan_line, fill=(*accent, 255), font=font_sub)
 
-    # Info Pills (VIEWS & DURATION)
     pill_y = art_y + 178
     pill_h = 54
     pill_w = (max_text_w - 18) // 2
 
-    # Views Box
     draw.rounded_rectangle(
         [text_x, pill_y, text_x + pill_w, pill_y + pill_h],
         radius=15,
@@ -355,7 +349,6 @@ def _render_sync(
     views_str = wrap_and_truncate(draw, f"Views : {clean_views}", font_meta, pill_w - 26, max_lines=1)[0]
     draw.text((text_x + 15, pill_y + 14), views_str, fill=(235, 235, 245, 255), font=font_meta)
 
-    # Duration Box
     dur_box_x = text_x + pill_w + 18
     draw.rounded_rectangle(
         [dur_box_x, pill_y, dur_box_x + pill_w, pill_y + pill_h],
@@ -370,7 +363,6 @@ def _render_sync(
     dur_label = wrap_and_truncate(draw, f"Duration : {dur_str}", font_meta, pill_w - 26, max_lines=1)[0]
     draw.text((dur_box_x + 15, pill_y + 14), dur_label, fill=(235, 235, 245, 255), font=font_meta)
 
-    # 8. PROGRESS BAR & TIMESTAMPS
     bar_y = art_y + 300
     bar_w = max_text_w
 
@@ -395,7 +387,6 @@ def _render_sync(
     end_w = _text_width(draw, dur_str, font_time)
     draw.text((text_x + bar_w - end_w, bar_y + 16), dur_str, fill=(205, 205, 220, 255), font=font_time)
 
-    # 9. PLAYER CONTROLS
     controls_center_x = text_x + (bar_w // 2)
     draw_player_controls(draw, controls_center_x, art_y + 408, accent)
 
@@ -416,7 +407,6 @@ def _extract_clean_vidid(raw_id: str) -> str:
 
 
 def _get_cached_queue_info(videoid: str) -> tuple:
-    """Gets exact title, duration, and user who played the song from active db queue."""
     try:
         if isinstance(db, dict):
             for _, queue_list in db.items():
@@ -447,80 +437,69 @@ async def gen_thumb(videoid: str) -> str:
     search_thumb = None
     thumb_path = CACHE_DIR / f"raw_{clean_id}.jpg"
 
-    # 1. Fetch 100% Exact Song Title & Channel from Official YouTube oEmbed API
-    try:
-        async with aiohttp.ClientSession(headers=HTTP_HEADERS) as session:
-            oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={clean_id}&format=json"
-            async with session.get(oembed_url, timeout=aiohttp.ClientTimeout(total=5)) as oresp:
-                if oresp.status == 200:
-                    odata = await oresp.json()
-                    if isinstance(odata, dict):
-                        if not title:
-                            title = odata.get("title") or ""
-                        channel = odata.get("author_name") or ""
-                        oembed_thumb = odata.get("thumbnail_url")
-    except Exception as e:
-        print(f"[gen_thumb oEmbed Warning] {e}")
-
-    # 2. Fetch Views & Duration from VideosSearch ONLY if video ID matches strictly
-    try:
-        results = VideosSearch(clean_id, limit=5)
-        res_data = await results.next()
-        result_list = (res_data or {}).get("result") or []
-
-        matched = None
-        for item in result_list:
-            if isinstance(item, dict) and item.get("id") == clean_id:
-                matched = item
-                break
-
-        if matched:
-            if not title:
-                title = matched.get("title") or ""
-            if not duration:
-                duration = matched.get("duration") or ""
-            if not channel:
-                chan_data = matched.get("channel")
-                if isinstance(chan_data, dict):
-                    channel = chan_data.get("name") or ""
-
-            view_data = matched.get("viewCount")
-            if isinstance(view_data, dict):
-                views = view_data.get("short") or view_data.get("text") or views
-            elif isinstance(view_data, str):
-                views = view_data
-
-            thumbs = matched.get("thumbnails")
-            if isinstance(thumbs, list) and thumbs and isinstance(thumbs[-1], dict):
-                raw_u = thumbs[-1].get("url")
-                if raw_u:
-                    search_thumb = raw_u.split("?")[0]
-    except Exception as e:
-        print(f"[gen_thumb Search Warning] {e}")
-
-    if not title:
-        title = "Music Stream"
-    if not duration:
-        duration = "LIVE"
-    if not channel:
-        channel = "YouTube Music"
-
-    # 3. Download Actual Song Thumbnail from YouTube Servers
+    # PRIORITIZE DIRECT YOUTUBE HQ THUMBNAIL URL FIRST (Bypasses Render IP block/search issues)
     hd_urls = [
+        f"https://i.ytimg.com/vi/{clean_id}/hqdefault.jpg",
         f"https://i.ytimg.com/vi/{clean_id}/maxresdefault.jpg",
         f"https://i.ytimg.com/vi/{clean_id}/sddefault.jpg",
-        f"https://i.ytimg.com/vi/{clean_id}/hqdefault.jpg",
-        f"https://i.ytimg.com/vi/{clean_id}/mqdefault.jpg",
     ]
-    for extra_u in (oembed_thumb, search_thumb):
-        if extra_u and extra_u not in hd_urls:
-            hd_urls.append(extra_u)
 
     try:
         async with aiohttp.ClientSession(headers=HTTP_HEADERS) as session:
+            # 1. Fetch Title & Channel via YouTube oEmbed API
+            try:
+                oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={clean_id}&format=json"
+                async with session.get(oembed_url, timeout=aiohttp.ClientTimeout(total=4)) as oresp:
+                    if oresp.status == 200:
+                        odata = await oresp.json()
+                        if isinstance(odata, dict):
+                            if not title:
+                                title = odata.get("title") or ""
+                            channel = odata.get("author_name") or ""
+                            oembed_thumb = odata.get("thumbnail_url")
+            except Exception:
+                pass
+
+            # 2. Fetch Metadata via VideosSearch as secondary source
+            try:
+                results = VideosSearch(clean_id, limit=3)
+                res_data = await results.next()
+                result_list = (res_data or {}).get("result") or []
+                matched = None
+                for item in result_list:
+                    if isinstance(item, dict) and item.get("id") == clean_id:
+                        matched = item
+                        break
+                if matched:
+                    if not title:
+                        title = matched.get("title") or ""
+                    if not duration:
+                        duration = matched.get("duration") or ""
+                    if not channel:
+                        chan_data = matched.get("channel")
+                        if isinstance(chan_data, dict):
+                            channel = chan_data.get("name") or ""
+                    view_data = matched.get("viewCount")
+                    if isinstance(view_data, dict):
+                        views = view_data.get("short") or view_data.get("text") or views
+                    elif isinstance(view_data, str):
+                        views = view_data
+                    thumbs = matched.get("thumbnails")
+                    if isinstance(thumbs, list) and thumbs and isinstance(thumbs[-1], dict):
+                        raw_u = thumbs[-1].get("url")
+                        if raw_u:
+                            search_thumb = raw_u.split("?")[0]
+            except Exception:
+                pass
+
+            for extra_u in (oembed_thumb, search_thumb):
+                if extra_u and extra_u not in hd_urls:
+                    hd_urls.append(extra_u)
+
+            # 3. Download Thumbnail directly
             for url in hd_urls:
                 try:
-                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=6)) as resp:
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
                         if resp.status == 200:
                             data = await resp.read()
                             if len(data) > 1000:
@@ -532,7 +511,13 @@ async def gen_thumb(videoid: str) -> str:
     except Exception as e:
         print(f"[gen_thumb Download Warning] {e}")
 
-    # 4. Render Final Thumbnail
+    if not title:
+        title = "Music Stream"
+    if not duration:
+        duration = "LIVE"
+    if not channel:
+        channel = "YouTube Music"
+
     try:
         bot_display = _clean_bot_brand()
         final_img = await asyncio.to_thread(

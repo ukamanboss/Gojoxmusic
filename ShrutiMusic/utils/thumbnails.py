@@ -11,6 +11,8 @@ import traceback
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageEnhance
 from py_yt import VideosSearch
+
+import config
 from ShrutiMusic import app
 
 CACHE_DIR = Path("cache")
@@ -22,23 +24,33 @@ FONT_REGULAR_PATH = "ShrutiMusic/assets/font2.ttf"
 FONT_BOLD_PATH = "ShrutiMusic/assets/font3.ttf"
 DEFAULT_THUMB = "ShrutiMusic/assets/ShrutiBots.jpg"
 
+# Compatible with both old and new Pillow versions (Prevents AttributeError)
+RESAMPLE_MODE = getattr(Image, "Resampling", Image).LANCZOS
+
+
+def _text_width(draw: ImageDraw.ImageDraw, text: str, font) -> float:
+    """Safely calculates text width across all Pillow versions."""
+    clean = " ".join(str(text).splitlines())
+    if hasattr(draw, "textlength"):
+        return draw.textlength(clean, font=font)
+    bbox = draw.textbbox((0, 0), clean, font=font)
+    return bbox[2] - bbox[0]
+
 
 def get_vibrant_color(img: Image.Image) -> tuple:
-    """Extracts a dominant color from the artwork and boosts its vibrancy for UI accents."""
+    """Extracts a dominant vibrant color from the artwork for UI accents."""
     try:
-        small = img.copy().resize((20, 20), Image.Resampling.LANCZOS).convert("RGB")
+        small = img.copy().resize((20, 20), RESAMPLE_MODE).convert("RGB")
         pixels = list(small.getdata())
-        
+
         best_color = (88, 166, 255)
         max_score = -1
 
         for r, g, b in pixels:
             h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
-            # Prefer colors that aren't too dark or washed out
             score = s * v
             if 0.15 < v < 0.95 and s > 0.25 and score > max_score:
                 max_score = score
-                # Boost saturation and brightness so it pops on dark glass
                 s = min(1.0, max(0.65, s * 1.2))
                 v = min(1.0, max(0.85, v * 1.2))
                 nr, ng, nb = colorsys.hsv_to_rgb(h, s, v)
@@ -50,14 +62,18 @@ def get_vibrant_color(img: Image.Image) -> tuple:
 
 
 def wrap_and_truncate(draw, text: str, font, max_width: int, max_lines: int = 2) -> list:
-    """Wraps text into 2 lines and adds '...' if it still overflows."""
-    words = text.split()
+    """Wraps text into lines and safely truncates overflow."""
+    clean_text = " ".join(str(text or "Unknown").split())
+    words = clean_text.split()
+    if not words:
+        return ["Unknown"]
+
     lines = []
     current_line = ""
 
     for word in words:
         test_line = f"{current_line} {word}".strip()
-        if draw.textlength(test_line, font=font) <= max_width:
+        if _text_width(draw, test_line, font) <= max_width:
             current_line = test_line
         else:
             if current_line:
@@ -70,7 +86,7 @@ def wrap_and_truncate(draw, text: str, font, max_width: int, max_lines: int = 2)
     if len(lines) > max_lines:
         lines = lines[:max_lines]
         last = lines[-1]
-        while draw.textlength(last + "...", font=font) > max_width and len(last) > 0:
+        while _text_width(draw, last + "...", font) > max_width and len(last) > 0:
             last = last[:-1]
         lines[-1] = last.strip() + "..."
 
@@ -78,60 +94,66 @@ def wrap_and_truncate(draw, text: str, font, max_width: int, max_lines: int = 2)
 
 
 def draw_player_controls(draw: ImageDraw.ImageDraw, center_x: int, y: int, accent: tuple):
-    """Draws crisp vector media player controls (Prev, Play/Pause, Next)."""
-    # 1. Central Play/Pause Circle Button
+    """Draws vector media player controls (Prev, Play/Pause, Next)."""
     r = 32
     draw.ellipse([center_x - r, y - r, center_x + r, y + r], fill=(*accent, 255))
-    
-    # Pause Bars inside Circle
+
     bar_w, bar_h = 5, 20
     gap = 5
     draw.rounded_rectangle(
         [center_x - gap - bar_w, y - bar_h // 2, center_x - gap, y + bar_h // 2],
-        radius=2, fill=(15, 15, 20, 255)
+        radius=2, fill=(15, 15, 20, 255),
     )
     draw.rounded_rectangle(
         [center_x + gap, y - bar_h // 2, center_x + gap + bar_w, y + bar_h // 2],
-        radius=2, fill=(15, 15, 20, 255)
+        radius=2, fill=(15, 15, 20, 255),
     )
 
-    # 2. Next Button (Right)
     nx = center_x + 85
     draw.polygon([(nx, y - 12), (nx, y + 12), (nx + 18, y)], fill=(255, 255, 255, 220))
     draw.rounded_rectangle([nx + 18, y - 12, nx + 22, y + 12], radius=1, fill=(255, 255, 255, 220))
 
-    # 3. Previous Button (Left)
     px = center_x - 85
     draw.polygon([(px, y - 12), (px, y + 12), (px - 18, y)], fill=(255, 255, 255, 220))
     draw.rounded_rectangle([px - 22, y - 12, px - 18, y + 12], radius=1, fill=(255, 255, 255, 220))
 
 
+def _load_base_image(thumb_path: Path) -> Image.Image:
+    """Loads downloaded thumbnail, falls back to default asset, or generates a dark canvas."""
+    if thumb_path and thumb_path.exists() and thumb_path.stat().st_size > 500:
+        try:
+            return Image.open(thumb_path).convert("RGBA")
+        except Exception:
+            pass
+
+    if os.path.exists(DEFAULT_THUMB):
+        try:
+            return Image.open(DEFAULT_THUMB).convert("RGBA")
+        except Exception:
+            pass
+
+    # Ultimate fallback if default asset is missing
+    return Image.new("RGBA", (CANVAS_W, CANVAS_H), (20, 22, 35, 255))
+
+
 def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, views: str, channel: str, bot_username: str):
     """CPU-bound Pillow image generation isolated for thread execution."""
-    try:
-        if thumb_path and thumb_path.exists():
-            base_img = Image.open(thumb_path).convert("RGBA")
-        else:
-            base_img = Image.open(DEFAULT_THUMB).convert("RGBA")
-    except Exception:
-        base_img = Image.open(DEFAULT_THUMB).convert("RGBA")
-
+    base_img = _load_base_image(thumb_path)
     accent = get_vibrant_color(base_img)
 
     # 1. CINEMATIC BLURRED BACKGROUND
-    bg = base_img.resize((CANVAS_W, CANVAS_H), Image.Resampling.LANCZOS)
+    bg = base_img.resize((CANVAS_W, CANVAS_H), RESAMPLE_MODE)
     bg = bg.filter(ImageFilter.GaussianBlur(55))
     bg = ImageEnhance.Brightness(bg).enhance(0.45)
 
     # 2. FROSTED GLASSMORPHISM CARD
     glass = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
     g_draw = ImageDraw.Draw(glass)
-    
-    # Outer glass board
     card_box = [45, 45, CANVAS_W - 45, CANVAS_H - 45]
-    g_draw.rounded_rectangle(card_box, radius=42, fill=(18, 18, 24, 165), outline=(255, 255, 255, 45), width=2)
-    
-    # Ambient Accent Glow behind Artwork
+    g_draw.rounded_rectangle(
+        card_box, radius=42, fill=(18, 18, 24, 165), outline=(255, 255, 255, 45), width=2
+    )
+
     art_size = 480
     art_x = 95
     art_y = (CANVAS_H - art_size) // 2
@@ -140,28 +162,30 @@ def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, vie
     glow_draw = ImageDraw.Draw(glow_layer)
     glow_draw.rounded_rectangle(
         [art_x - 15, art_y - 15, art_x + art_size + 15, art_y + art_size + 15],
-        radius=50, fill=(*accent, 85)
+        radius=50, fill=(*accent, 85),
     )
     glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(35))
 
     bg = Image.alpha_composite(bg, glass)
     bg = Image.alpha_composite(bg, glow_layer)
 
-    # 3. MAIN ARTWORK (PERFECT SQUARE CROP + ROUNDED CORNERS)
+    # 3. MAIN ARTWORK (SQUARE CROP + ROUNDED CORNERS)
     min_dim = min(base_img.width, base_img.height)
-    left = (base_img.width - min_dim) / 2
-    top = (base_img.height - min_dim) / 2
+    left = (base_img.width - min_dim) // 2
+    top = (base_img.height - min_dim) // 2
     art = base_img.crop((left, top, left + min_dim, top + min_dim))
-    art = art.resize((art_size, art_size), Image.Resampling.LANCZOS)
+    art = art.resize((art_size, art_size), RESAMPLE_MODE)
 
     mask = Image.new("L", (art_size, art_size), 0)
     ImageDraw.Draw(mask).rounded_rectangle([0, 0, art_size, art_size], radius=36, fill=255)
     art.putalpha(mask)
 
-    # Subtle border around artwork
     bg.paste(art, (art_x, art_y), art)
     draw = ImageDraw.Draw(bg)
-    draw.rounded_rectangle([art_x, art_y, art_x + art_size, art_y + art_size], radius=36, outline=(255, 255, 255, 60), width=2)
+    draw.rounded_rectangle(
+        [art_x, art_y, art_x + art_size, art_y + art_size],
+        radius=36, outline=(255, 255, 255, 60), width=2,
+    )
 
     # 4. LOAD FONTS
     try:
@@ -176,23 +200,20 @@ def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, vie
     text_x = art_x + art_size + 55
     max_text_w = (CANVAS_W - 45) - text_x - 45
 
-    # "NOW PLAYING" Neon Badge
     badge_w, badge_h = 200, 38
     badge_y = art_y + 10
     draw.rounded_rectangle(
         [text_x, badge_y, text_x + badge_w, badge_y + badge_h],
-        radius=19, fill=(*accent, 35), outline=(*accent, 200), width=2
+        radius=19, fill=(*accent, 35), outline=(*accent, 200), width=2,
     )
     draw.ellipse([text_x + 16, badge_y + 13, text_x + 28, badge_y + 25], fill=(*accent, 255))
     draw.text((text_x + 38, badge_y + 7), "NOW PLAYING", fill=(255, 255, 255, 240), font=font_badge)
 
-    # Bot Branding Top-Right
     if bot_username:
-        brand_txt = f"@{bot_username}"
-        b_w = draw.textlength(brand_txt, font=font_badge)
+        brand_txt = f"@{str(bot_username).lstrip('@')}"
+        b_w = _text_width(draw, brand_txt, font_badge)
         draw.text((CANVAS_W - 90 - b_w, badge_y + 7), brand_txt, fill=(255, 255, 255, 130), font=font_badge)
 
-    # Song Title (2-Line Smart Wrap)
     title_lines = wrap_and_truncate(draw, title, font_title, max_text_w, max_lines=2)
     title_y = badge_y + 62
     for line in title_lines:
@@ -200,7 +221,6 @@ def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, vie
         draw.text((text_x, title_y), line, fill=(255, 255, 255, 255), font=font_title)
         title_y += 56
 
-    # Channel & Views Info (Clean Text without Broken Emojis)
     meta_y = art_y + 205
     clean_channel = wrap_and_truncate(draw, f"Artist :  {channel}", font_sub, max_text_w, max_lines=1)[0]
     draw.text((text_x, meta_y), clean_channel, fill=(210, 210, 220, 255), font=font_sub)
@@ -209,85 +229,95 @@ def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, vie
     # 6. PROGRESS BAR
     bar_y = art_y + 325
     bar_w = max_text_w
-    
-    # Background Track
+
     draw.rounded_rectangle([text_x, bar_y, text_x + bar_w, bar_y + 8], radius=4, fill=(255, 255, 255, 50))
-    
-    # Active Track (35% Progress)
+
     prog_w = int(bar_w * 0.35)
     draw.rounded_rectangle([text_x, bar_y, text_x + prog_w, bar_y + 8], radius=4, fill=(*accent, 255))
-    
-    # Glowing Thumb Dot
+
     thumb_x = text_x + prog_w
     draw.ellipse([thumb_x - 10, bar_y - 6, thumb_x + 10, bar_y + 14], fill=(255, 255, 255, 255))
     draw.ellipse([thumb_x - 5, bar_y - 1, thumb_x + 5, bar_y + 9], fill=(*accent, 255))
 
-    # Timestamps
     draw.text((text_x, bar_y + 18), "0:00", fill=(190, 190, 205, 255), font=font_time)
     dur_str = str(duration) if duration else "LIVE"
-    dur_w = draw.textlength(dur_str, font=font_time)
+    dur_w = _text_width(draw, dur_str, font_time)
     draw.text((text_x + bar_w - dur_w, bar_y + 18), dur_str, fill=(190, 190, 205, 255), font=font_time)
 
     # 7. VECTOR MEDIA CONTROLS
     controls_center_x = text_x + (bar_w // 2)
     draw_player_controls(draw, controls_center_x, art_y + 425, accent)
 
-    # Save Final Image
     bg.convert("RGB").save(out_path, "PNG", optimize=True)
-    return out_path
+    return str(out_path)
 
 
-async def gen_thumb(videoid: str):
-    out_path = f"cache/{videoid}_ultra_v3.png"
+async def gen_thumb(videoid: str) -> str:
+    videoid = str(videoid).strip()
+    out_path = f"cache/{videoid}_ultra_v4.png"
     if os.path.isfile(out_path):
         return out_path
 
     title = "ShrutiMusic Audio"
     duration = "0:00"
     views = "N/A"
-    channel = "ShrutiBots"
+    channel = "YouTube Music"
+    fallback_url = None
     thumb_path = CACHE_DIR / f"raw_{videoid}.jpg"
 
+    # Step 1: Safely fetch metadata (Isolated so NoneType never blocks image download)
     try:
-        results = VideosSearch(videoid, limit=1)
+        results = VideosSearch(f"https://www.youtube.com/watch?v={videoid}", limit=1)
         res_data = await results.next()
-        if res_data and res_data.get("result"):
-            result = res_data["result"][0]
-            title = result.get("title", title)
-            duration = result.get("duration", duration)
-            views = result.get("viewCount", {}).get("short", views)
-            channel = result.get("channel", {}).get("name", channel)
-            # Pick highest resolution thumbnail from list
-            thumbs = result.get("thumbnails", [])
-            fallback_url = thumbs[-1]["url"].split("?")[0] if thumbs else None
-        else:
-            fallback_url = None
+        result_list = (res_data or {}).get("result")
+        if result_list and isinstance(result_list, list):
+            result = result_list[0] or {}
+            title = result.get("title") or title
+            duration = result.get("duration") or duration
 
-        # Try fetching direct 1080p MaxRes thumbnail first, then fallback
-        hd_urls = [
-            f"https://i.ytimg.com/vi/{videoid}/maxresdefault.jpg",
-            f"https://i.ytimg.com/vi/{videoid}/hqdefault.jpg",
-        ]
-        if fallback_url:
-            hd_urls.append(fallback_url)
+            view_data = result.get("viewCount")
+            if isinstance(view_data, dict):
+                views = view_data.get("short") or views
 
+            chan_data = result.get("channel")
+            if isinstance(chan_data, dict):
+                channel = chan_data.get("name") or channel
+
+            thumbs = result.get("thumbnails")
+            if isinstance(thumbs, list) and len(thumbs) > 0 and isinstance(thumbs[-1], dict):
+                raw_u = thumbs[-1].get("url")
+                if raw_u:
+                    fallback_url = raw_u.split("?")[0]
+    except Exception as e:
+        print(f"[gen_thumb Metadata Warning] {e}")
+
+    # Step 2: Independently download HD YouTube thumbnail directly by videoid
+    hd_urls = [
+        f"https://i.ytimg.com/vi/{videoid}/maxresdefault.jpg",
+        f"https://i.ytimg.com/vi/{videoid}/hqdefault.jpg",
+    ]
+    if fallback_url:
+        hd_urls.append(fallback_url)
+
+    try:
         async with aiohttp.ClientSession() as session:
             for url in hd_urls:
                 try:
                     async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
                         if resp.status == 200:
-                            async with aiofiles.open(thumb_path, "wb") as f:
-                                await f.write(await resp.read())
-                            break
+                            data = await resp.read()
+                            if len(data) > 1000:
+                                async with aiofiles.open(thumb_path, "wb") as f:
+                                    await f.write(data)
+                                break
                 except Exception:
                     continue
-
     except Exception as e:
-        print(f"[gen_thumb Metadata Error] {e}")
+        print(f"[gen_thumb Download Warning] {e}")
 
+    # Step 3: Render image in background thread; fallback to STREAM_IMG_URL if anything fails
     try:
-        bot_uname = getattr(app, "username", "ShrutiBots")
-        # Run heavy PIL processing in a background thread to prevent VC audio lag
+        bot_uname = getattr(app, "username", None) or "ShrutiBots"
         final_img = await asyncio.to_thread(
             _render_sync,
             thumb_path,
@@ -302,7 +332,9 @@ async def gen_thumb(videoid: str):
     except Exception as e:
         print(f"[gen_thumb Render Error] {e}")
         traceback.print_exc()
-        return None
+        if os.path.exists(DEFAULT_THUMB):
+            return DEFAULT_THUMB
+        return getattr(config, "STREAM_IMG_URL", "https://telegra.ph/file/05aa686cf52fc666184bf.jpg")
     finally:
         if thumb_path.exists():
             try:

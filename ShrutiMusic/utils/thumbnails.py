@@ -27,6 +27,8 @@ CANVAS_W, CANVAS_H = 1320, 760
 FONT_REGULAR_PATH = "ShrutiMusic/assets/font2.ttf"
 FONT_BOLD_PATH = "ShrutiMusic/assets/font3.ttf"
 DEFAULT_THUMB = "ShrutiMusic/assets/ShrutiBots.jpg"
+DEFAULT_THUMB_URL = "https://graph.org/file/8900e3ff2d522b0a72fde-85a16f08cdf35e4b93.jpg"
+DEFAULT_THUMB_CACHE = CACHE_DIR / "default_music_thumb.jpg"
 
 # Muted premium palettes; one palette is chosen per generated thumbnail.
 PALETTES = [
@@ -160,6 +162,37 @@ async def fetch_thumbnail(url, videoid):
     except Exception as exc:
         print(f"[gen_thumb] Thumbnail download failed: {exc}")
         return None
+
+
+
+async def fetch_fixed_default_thumbnail():
+    """Download/cache the user's chosen artwork; use it for every song."""
+    if DEFAULT_THUMB_CACHE.exists() and DEFAULT_THUMB_CACHE.stat().st_size > 0:
+        return DEFAULT_THUMB_CACHE
+
+    timeout = aiohttp.ClientTimeout(total=20)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(DEFAULT_THUMB_URL) as response:
+                if response.status != 200:
+                    raise RuntimeError(f"Default image returned HTTP {response.status}")
+                content = await response.read()
+                if not content:
+                    raise RuntimeError("Default image response was empty")
+                async with aiofiles.open(DEFAULT_THUMB_CACHE, "wb") as file:
+                    await file.write(content)
+        # Validate the downloaded file before relying on it.
+        with Image.open(DEFAULT_THUMB_CACHE) as image:
+            image.verify()
+        return DEFAULT_THUMB_CACHE
+    except Exception as exc:
+        print(f"[gen_thumb] Fixed default image download failed: {exc}")
+        try:
+            if DEFAULT_THUMB_CACHE.exists():
+                DEFAULT_THUMB_CACHE.unlink()
+        except OSError:
+            pass
+        return Path(DEFAULT_THUMB) if Path(DEFAULT_THUMB).exists() else None
 
 
 def draw_pill(draw, xy, text, fill, font):
@@ -339,19 +372,15 @@ async def gen_thumb(videoid: str):
         views = (result.get("viewCount") or {}).get("short") or views
         channel = (result.get("channel") or {}).get("name") or channel
 
-        thumbnails = result.get("thumbnails") or []
-        thumb_url = thumbnails[0].get("url", "").split("?")[0] if thumbnails else ""
-        thumb_path = await fetch_thumbnail(thumb_url, videoid)
-
-        if thumb_path and thumb_path.exists():
+        # Always use the same artwork URL supplied by the user for every song.
+        # YouTube thumbnails are intentionally ignored.
+        thumb_path = await fetch_fixed_default_thumbnail()
+        if thumb_path and Path(thumb_path).exists():
             with Image.open(thumb_path) as source:
-                base_img = source.convert("RGBA")
-        elif Path(DEFAULT_THUMB).exists():
-            with Image.open(DEFAULT_THUMB) as source:
                 base_img = source.convert("RGBA")
         else:
             raise FileNotFoundError(
-                f"Could not download YouTube thumbnail and default image is missing: {DEFAULT_THUMB}"
+                "Could not load the configured default thumbnail image."
             )
 
     except Exception as exc:
@@ -382,8 +411,6 @@ async def gen_thumb(videoid: str):
         traceback.print_exc()
         return None
     finally:
-        if thumb_path and thumb_path.exists():
-            try:
-                thumb_path.unlink()
-            except OSError:
-                pass
+        # Keep the fixed default image cached so every song uses it without
+        # downloading it again. Do not remove DEFAULT_THUMB_CACHE here.
+        pass

@@ -55,15 +55,15 @@ STRING5 = os.getenv("STRING_SESSION5", None)
 
 AUTO_LEAVING_ASSISTANT = bool(os.getenv("AUTO_LEAVING_ASSISTANT", False))
 
-START_IMG_URL = "https://i.postimg.cc/fLjjnQRk/Shruti-Bots.png"
-PING_IMG_URL = "https://i.postimg.cc/fLjjnQRk/Shruti-Bots.png"
-PLAYLIST_IMG_URL = "https://i.postimg.cc/fLjjnQRk/Shruti-Bots.png"
-STATS_IMG_URL = "https://i.postimg.cc/fLjjnQRk/Shruti-Bots.png"
-TELEGRAM_AUDIO_URL = "https://i.postimg.cc/fLjjnQRk/Shruti-Bots.png"
-TELEGRAM_VIDEO_URL = "https://i.postimg.cc/fLjjnQRk/Shruti-Bots.png"
-STREAM_IMG_URL = "https://i.postimg.cc/fLjjnQRk/Shruti-Bots.png"
-SOUNCLOUD_IMG_URL = "https://i.postimg.cc/fLjjnQRk/Shruti-Bots.png"
-YOUTUBE_IMG_URL = "https://i.postimg.cc/fLjjnQRk/Shruti-Bots.png"
+START_IMG_URL = "https://graph.org/file/8900e3ff2d522b0a72fde-85a16f08cdf35e4b93.jpg"
+PING_IMG_URL = "https://graph.org/file/8900e3ff2d522b0a72fde-85a16f08cdf35e4b93.jpg"
+PLAYLIST_IMG_URL = "https://graph.org/file/8900e3ff2d522b0a72fde-85a16f08cdf35e4b93.jpg"
+STATS_IMG_URL = "https://graph.org/file/8900e3ff2d522b0a72fde-85a16f08cdf35e4b93.jpg"
+TELEGRAM_AUDIO_URL = "https://graph.org/file/8900e3ff2d522b0a72fde-85a16f08cdf35e4b93.jpg"
+TELEGRAM_VIDEO_URL = "https://graph.org/file/8900e3ff2d522b0a72fde-85a16f08cdf35e4b93.jpg"
+STREAM_IMG_URL = "https://graph.org/file/8900e3ff2d522b0a72fde-85a16f08cdf35e4b93.jpg"
+SOUNCLOUD_IMG_URL = "https://graph.org/file/8900e3ff2d522b0a72fde-85a16f08cdf35e4b93.jpg"
+YOUTUBE_IMG_URL = "https://graph.org/file/8900e3ff2d522b0a72fde-85a16f08cdf35e4b93.jpg"
 
 BANNED_USERS = filters.user()
 adminlist = {}

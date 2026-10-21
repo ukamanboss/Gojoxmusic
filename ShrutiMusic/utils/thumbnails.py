@@ -1,4 +1,5 @@
 # Copyright (c) 2026 Nand Yaduwanshi <NoxxOP>
+# Location: Supaul, Bihar
 # All rights reserved.
 
 import os
@@ -25,7 +26,7 @@ CANVAS_W, CANVAS_H = 1280, 720
 FONT_REGULAR_PATH = "ShrutiMusic/assets/font2.ttf"
 FONT_BOLD_PATH = "ShrutiMusic/assets/font3.ttf"
 
-# 🔥 AAPKI CUSTOM IMAGE AS DEFAULT FALLBACK
+# Yahan Aapki Custom Image (1:1 PFP) Load Hogi Fallback Ke Liye
 DEFAULT_THUMB = "ShrutiMusic/assets/ShrutiBots.jpg"
 
 RESAMPLE_MODE = getattr(getattr(Image, "Resampling", Image), "LANCZOS", Image.BICUBIC)
@@ -115,8 +116,7 @@ def _load_base_image(thumb_path: Path) -> Image.Image:
     if os.path.exists(DEFAULT_THUMB):
         try: return Image.open(DEFAULT_THUMB).convert("RGBA")
         except Exception: pass
-    img = Image.new("RGBA", (CANVAS_W, CANVAS_H), (14, 16, 26, 255))
-    return img
+    return Image.new("RGBA", (CANVAS_W, CANVAS_H), (14, 16, 26, 255))
 
 def draw_player_controls(draw: ImageDraw.ImageDraw, center_x: int, y: int, accent: tuple):
     r = 30
@@ -134,92 +134,101 @@ def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, vie
     base_img = _load_base_image(thumb_path)
     accent = get_vibrant_color(base_img)
 
+    # 1. BLURRED CINEMATIC BACKGROUND
     bg = base_img.resize((CANVAS_W, CANVAS_H), RESAMPLE_MODE)
-    bg = bg.filter(ImageFilter.GaussianBlur(48))
-    bg = ImageEnhance.Brightness(bg).enhance(0.36)
+    bg = bg.filter(ImageFilter.GaussianBlur(55))
+    bg = ImageEnhance.Brightness(bg).enhance(0.35)
 
+    # 2. FROSTED GLASS MAIN CARD
     glass = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
     g_draw = ImageDraw.Draw(glass)
-    g_draw.rounded_rectangle([38, 38, CANVAS_W - 38, CANVAS_H - 38], radius=36, fill=(12, 14, 22, 190), outline=(255, 255, 255, 55), width=2)
+    card_box = [40, 40, CANVAS_W - 40, CANVAS_H - 40]
+    g_draw.rounded_rectangle(card_box, radius=38, fill=(12, 14, 22, 180), outline=(255, 255, 255, 45), width=2)
 
-    art_w, art_h, art_x, art_y = 490, 285, 78, 152
+    # 3. SQUARE 1:1 ARTWORK CROP (Perfect for Custom PFP & YT Thumbs)
+    art_w, art_h = 460, 460
+    art_x, art_y = 80, 130
+
     glow_layer = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
-    ImageDraw.Draw(glow_layer).rounded_rectangle([art_x - 12, art_y - 12, art_x + art_w + 12, art_y + art_h + 12], radius=32, fill=(*accent, 95))
-    glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(28))
+    ImageDraw.Draw(glow_layer).rounded_rectangle([art_x - 14, art_y - 14, art_x + art_w + 14, art_y + art_h + 14], radius=44, fill=(*accent, 95))
+    glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(32))
 
     bg = Image.alpha_composite(bg, glass)
     bg = Image.alpha_composite(bg, glow_layer)
 
+    # Smart Square Center Crop Logic
     w, h = base_img.size
-    if (h / float(max(w, 1))) > 0.68:
-        new_h = int(w * 9 / 16)
-        top_trim = max(0, (h - new_h) // 2)
-        cropped_src = base_img.crop((0, top_trim, w, top_trim + new_h))
-    else:
-        cropped_src = base_img
-    art = cropped_src.resize((art_w, art_h), RESAMPLE_MODE)
+    min_dim = min(w, h)
+    left = (w - min_dim) // 2
+    top = (h - min_dim) // 2
+    art = base_img.crop((left, top, left + min_dim, top + min_dim))
+    art = art.resize((art_w, art_h), RESAMPLE_MODE)
+
     mask = Image.new("L", (art_w, art_h), 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, art_w, art_h], radius=26, fill=255)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, art_w, art_h], radius=32, fill=255)
     art.putalpha(mask)
     bg.paste(art, (art_x, art_y), art)
     
     draw = ImageDraw.Draw(bg)
-    draw.rounded_rectangle([art_x, art_y, art_x + art_w, art_y + art_h], radius=26, outline=(*accent, 210), width=3)
+    draw.rounded_rectangle([art_x, art_y, art_x + art_w, art_y + art_h], radius=32, outline=(*accent, 220), width=3)
 
+    # 4. FONTS
     try:
-        font_title = ImageFont.truetype(FONT_BOLD_PATH, 40)
-        font_sub = ImageFont.truetype(FONT_BOLD_PATH, 24)
-        font_meta = ImageFont.truetype(FONT_BOLD_PATH, 21)
+        font_title = ImageFont.truetype(FONT_BOLD_PATH, 42)
+        font_sub = ImageFont.truetype(FONT_BOLD_PATH, 25)
+        font_meta = ImageFont.truetype(FONT_BOLD_PATH, 22)
         font_badge = ImageFont.truetype(FONT_BOLD_PATH, 20)
     except Exception:
         font_title = font_sub = font_meta = font_badge = ImageFont.load_default()
 
-    info_card_y, info_card_h = art_y + art_h + 26, 152
-    draw.rounded_rectangle([art_x, info_card_y, art_x + art_w, info_card_y + info_card_h], radius=22, fill=(255, 255, 255, 16), outline=(255, 255, 255, 45), width=1)
-    
-    clean_req = _clean_text(requested_by, "Group Member")
-    draw.text((art_x + 22, info_card_y + 22), wrap_and_truncate(draw, f"Played By : {clean_req}", font_meta, art_w - 40, 1)[0], fill=(255, 255, 255, 240), font=font_meta)
-    draw.text((art_x + 22, info_card_y + 62), "Audio : High Quality Stream", fill=(*accent, 245), font=font_meta)
-    draw.text((art_x + 22, info_card_y + 102), f"Bot : {bot_display}", fill=(195, 195, 215, 240), font=font_meta)
+    # 5. RIGHT SIDE INFO PANEL
+    text_x = art_x + art_w + 50
+    max_text_w = (CANVAS_W - 60) - text_x
 
-    header_y = 72
-    draw.rounded_rectangle([78, header_y, 298, header_y + 42], radius=21, fill=(*accent, 40), outline=(*accent, 220), width=2)
-    draw.ellipse([96, header_y + 15, 108, header_y + 27], fill=(*accent, 255))
-    draw.text((120, header_y + 9), "NOW PLAYING", fill=(255, 255, 255, 250), font=font_badge)
+    # Header Bar
+    header_y = 130
+    draw.rounded_rectangle([text_x, header_y, text_x + 200, header_y + 40], radius=20, fill=(*accent, 40), outline=(*accent, 220), width=2)
+    draw.ellipse([text_x + 15, header_y + 14, text_x + 27, header_y + 26], fill=(*accent, 255))
+    draw.text((text_x + 36, header_y + 9), "NOW PLAYING", fill=(255, 255, 255, 245), font=font_badge)
 
-    clean_bot_top = wrap_and_truncate(draw, bot_display, font_badge, 460, 1)[0]
-    bot_w = int(_text_width(draw, clean_bot_top, font_badge)) + 44
-    draw.rounded_rectangle([CANVAS_W - 78 - bot_w, header_y, CANVAS_W - 78, header_y + 42], radius=21, fill=(255, 255, 255, 24), outline=(*accent, 170), width=2)
-    draw.text((CANVAS_W - 78 - bot_w + 22, header_y + 9), clean_bot_top, fill=(255, 255, 255, 250), font=font_badge)
+    clean_bot_top = wrap_and_truncate(draw, bot_display, font_badge, 400, 1)[0]
+    bot_w = int(_text_width(draw, clean_bot_top, font_badge)) + 40
+    draw.rounded_rectangle([CANVAS_W - 60 - bot_w, header_y, CANVAS_W - 60, header_y + 40], radius=20, fill=(255, 255, 255, 20), outline=(*accent, 150), width=2)
+    draw.text((CANVAS_W - 60 - bot_w + 20, header_y + 9), clean_bot_top, fill=(255, 255, 255, 250), font=font_badge)
 
-    text_x = art_x + art_w + 42
-    max_text_w = (CANVAS_W - 78) - text_x
-
-    title_y = art_y + 2
+    # Title
+    title_y = header_y + 75
     for line in wrap_and_truncate(draw, _clean_text(title, "Unknown Track"), font_title, max_text_w, 2):
         draw.text((text_x + 2, title_y + 2), line, fill=(0, 0, 0, 190), font=font_title)
         draw.text((text_x, title_y), line, fill=(255, 255, 255, 255), font=font_title)
-        title_y += 50
+        title_y += 52
 
-    chan_y = art_y + 120
-    draw.text((text_x, chan_y), wrap_and_truncate(draw, f"Channel : {_clean_text(channel, 'Music')}", font_sub, max_text_w, 1)[0], fill=(*accent, 255), font=font_sub)
+    # Channel & Played By
+    chan_y = title_y + 15
+    draw.text((text_x, chan_y), wrap_and_truncate(draw, f"Artist : {_clean_text(channel, 'Music')}", font_sub, max_text_w, 1)[0], fill=(*accent, 255), font=font_sub)
+    draw.text((text_x, chan_y + 40), wrap_and_truncate(draw, f"Played By : {_clean_text(requested_by, 'Admin')}", font_meta, max_text_w, 1)[0], fill=(200, 200, 220, 255), font=font_meta)
 
-    pill_y, pill_h, pill_w = art_y + 178, 54, (max_text_w - 18) // 2
-    draw.rounded_rectangle([text_x, pill_y, text_x + pill_w, pill_y + pill_h], radius=15, fill=(255, 255, 255, 20), outline=(255, 255, 255, 55), width=1)
+    # Views & Duration Pills
+    pill_y, pill_h, pill_w = chan_y + 100, 52, (max_text_w - 18) // 2
+    draw.rounded_rectangle([text_x, pill_y, text_x + pill_w, pill_y + pill_h], radius=15, fill=(255, 255, 255, 18), outline=(255, 255, 255, 45), width=1)
     draw.text((text_x + 15, pill_y + 14), wrap_and_truncate(draw, f"Views : {_clean_text(views, 'YouTube')}", font_meta, pill_w - 26, 1)[0], fill=(235, 235, 245, 255), font=font_meta)
 
     dur_box_x = text_x + pill_w + 18
-    draw.rounded_rectangle([dur_box_x, pill_y, dur_box_x + pill_w, pill_y + pill_h], radius=15, fill=(255, 255, 255, 20), outline=(255, 255, 255, 55), width=1)
+    draw.rounded_rectangle([dur_box_x, pill_y, dur_box_x + pill_w, pill_y + pill_h], radius=15, fill=(255, 255, 255, 18), outline=(255, 255, 255, 45), width=1)
     dur_str = _clean_text(duration, "LIVE")
     draw.text((dur_box_x + 15, pill_y + 14), wrap_and_truncate(draw, f"Duration : {dur_str if dur_str != 'None' else 'LIVE'}", font_meta, pill_w - 26, 1)[0], fill=(235, 235, 245, 255), font=font_meta)
 
-    bar_y, bar_w = art_y + 300, max_text_w
-    draw.rounded_rectangle([text_x, bar_y, text_x + bar_w, bar_y + 8], radius=4, fill=(255, 255, 255, 55))
+    # Progress Bar
+    bar_y, bar_w = pill_y + 95, max_text_w
+    draw.rounded_rectangle([text_x, bar_y, text_x + bar_w, bar_y + 8], radius=4, fill=(255, 255, 255, 40))
     prog_w = int(bar_w * 0.38)
     draw.rounded_rectangle([text_x, bar_y, text_x + prog_w, bar_y + 8], radius=4, fill=(*accent, 255))
     draw.ellipse([text_x + prog_w - 5, bar_y - 1, text_x + prog_w + 5, bar_y + 9], fill=(*accent, 255))
+    
+    draw.text((text_x, bar_y + 16), "00:00", fill=(190, 190, 205, 255), font=font_badge)
+    draw.text((text_x + bar_w - _text_width(draw, dur_str if dur_str != 'None' else 'LIVE', font_badge), bar_y + 16), dur_str if dur_str != 'None' else 'LIVE', fill=(190, 190, 205, 255), font=font_badge)
 
-    draw_player_controls(draw, text_x + (bar_w // 2), art_y + 408, accent)
+    draw_player_controls(draw, text_x + (bar_w // 2), bar_y + 80, accent)
     bg.convert("RGB").save(out_path, "PNG", optimize=True)
     return str(out_path)
 
@@ -244,7 +253,7 @@ def _get_cached_queue_info(videoid: str) -> tuple:
 
 async def gen_thumb(videoid: str) -> str:
     clean_id = _extract_clean_vidid(videoid)
-    out_path = f"cache/{clean_id}_v8_final.png"
+    out_path = f"cache/{clean_id}_v8_square.png"
     if os.path.isfile(out_path): return out_path
 
     q_title, q_dur, q_user = _get_cached_queue_info(clean_id)
@@ -272,7 +281,6 @@ async def gen_thumb(videoid: str) -> str:
 
     hd_urls = [
         f"https://i.ytimg.com/vi/{clean_id}/maxresdefault.jpg",
-        f"https://i.ytimg.com/vi/{clean_id}/sddefault.jpg",
         f"https://i.ytimg.com/vi/{clean_id}/hqdefault.jpg",
     ]
 
@@ -294,7 +302,7 @@ async def gen_thumb(videoid: str) -> str:
         final_img = await asyncio.to_thread(_render_sync, thumb_path, out_path, title, duration, views, channel, requested_by, bot_display)
         return final_img
     except Exception:
-        return DEFAULT_THUMB
+        return getattr(config, "STREAM_IMG_URL", DEFAULT_THUMB)
     finally:
         if thumb_path.exists():
             try: os.remove(thumb_path)

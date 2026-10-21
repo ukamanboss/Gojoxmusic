@@ -26,8 +26,9 @@ CANVAS_W, CANVAS_H = 1280, 720
 FONT_REGULAR_PATH = "ShrutiMusic/assets/font2.ttf"
 FONT_BOLD_PATH = "ShrutiMusic/assets/font3.ttf"
 
-# Yahan Aapki Custom Image (1:1 PFP) Load Hogi Fallback Ke Liye
-DEFAULT_THUMB = "ShrutiMusic/assets/ShrutiBots.jpg"
+# 🔥 AAPKA NAYA DIRECT LINK YAHAN SET HAI
+CUSTOM_FALLBACK_URL = "https://i.postimg.cc/fLjjnQRk/Shruti-Bots.png"
+DEFAULT_THUMB_FILE = CACHE_DIR / "custom_fallback_pfp.png"
 
 RESAMPLE_MODE = getattr(getattr(Image, "Resampling", Image), "LANCZOS", Image.BICUBIC)
 
@@ -113,8 +114,8 @@ def _load_base_image(thumb_path: Path) -> Image.Image:
     if thumb_path and thumb_path.exists() and thumb_path.stat().st_size > 800:
         try: return Image.open(thumb_path).convert("RGBA")
         except Exception: pass
-    if os.path.exists(DEFAULT_THUMB):
-        try: return Image.open(DEFAULT_THUMB).convert("RGBA")
+    if DEFAULT_THUMB_FILE.exists():
+        try: return Image.open(DEFAULT_THUMB_FILE).convert("RGBA")
         except Exception: pass
     return Image.new("RGBA", (CANVAS_W, CANVAS_H), (14, 16, 26, 255))
 
@@ -134,18 +135,16 @@ def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, vie
     base_img = _load_base_image(thumb_path)
     accent = get_vibrant_color(base_img)
 
-    # 1. BLURRED CINEMATIC BACKGROUND
     bg = base_img.resize((CANVAS_W, CANVAS_H), RESAMPLE_MODE)
     bg = bg.filter(ImageFilter.GaussianBlur(55))
     bg = ImageEnhance.Brightness(bg).enhance(0.35)
 
-    # 2. FROSTED GLASS MAIN CARD
     glass = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
     g_draw = ImageDraw.Draw(glass)
     card_box = [40, 40, CANVAS_W - 40, CANVAS_H - 40]
     g_draw.rounded_rectangle(card_box, radius=38, fill=(12, 14, 22, 180), outline=(255, 255, 255, 45), width=2)
 
-    # 3. SQUARE 1:1 ARTWORK CROP (Perfect for Custom PFP & YT Thumbs)
+    # 1:1 Square Crop Logic (Perfect for PFP)
     art_w, art_h = 460, 460
     art_x, art_y = 80, 130
 
@@ -156,7 +155,6 @@ def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, vie
     bg = Image.alpha_composite(bg, glass)
     bg = Image.alpha_composite(bg, glow_layer)
 
-    # Smart Square Center Crop Logic
     w, h = base_img.size
     min_dim = min(w, h)
     left = (w - min_dim) // 2
@@ -172,7 +170,6 @@ def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, vie
     draw = ImageDraw.Draw(bg)
     draw.rounded_rectangle([art_x, art_y, art_x + art_w, art_y + art_h], radius=32, outline=(*accent, 220), width=3)
 
-    # 4. FONTS
     try:
         font_title = ImageFont.truetype(FONT_BOLD_PATH, 42)
         font_sub = ImageFont.truetype(FONT_BOLD_PATH, 25)
@@ -181,11 +178,9 @@ def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, vie
     except Exception:
         font_title = font_sub = font_meta = font_badge = ImageFont.load_default()
 
-    # 5. RIGHT SIDE INFO PANEL
     text_x = art_x + art_w + 50
     max_text_w = (CANVAS_W - 60) - text_x
 
-    # Header Bar
     header_y = 130
     draw.rounded_rectangle([text_x, header_y, text_x + 200, header_y + 40], radius=20, fill=(*accent, 40), outline=(*accent, 220), width=2)
     draw.ellipse([text_x + 15, header_y + 14, text_x + 27, header_y + 26], fill=(*accent, 255))
@@ -196,19 +191,16 @@ def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, vie
     draw.rounded_rectangle([CANVAS_W - 60 - bot_w, header_y, CANVAS_W - 60, header_y + 40], radius=20, fill=(255, 255, 255, 20), outline=(*accent, 150), width=2)
     draw.text((CANVAS_W - 60 - bot_w + 20, header_y + 9), clean_bot_top, fill=(255, 255, 255, 250), font=font_badge)
 
-    # Title
     title_y = header_y + 75
     for line in wrap_and_truncate(draw, _clean_text(title, "Unknown Track"), font_title, max_text_w, 2):
         draw.text((text_x + 2, title_y + 2), line, fill=(0, 0, 0, 190), font=font_title)
         draw.text((text_x, title_y), line, fill=(255, 255, 255, 255), font=font_title)
         title_y += 52
 
-    # Channel & Played By
     chan_y = title_y + 15
     draw.text((text_x, chan_y), wrap_and_truncate(draw, f"Artist : {_clean_text(channel, 'Music')}", font_sub, max_text_w, 1)[0], fill=(*accent, 255), font=font_sub)
     draw.text((text_x, chan_y + 40), wrap_and_truncate(draw, f"Played By : {_clean_text(requested_by, 'Admin')}", font_meta, max_text_w, 1)[0], fill=(200, 200, 220, 255), font=font_meta)
 
-    # Views & Duration Pills
     pill_y, pill_h, pill_w = chan_y + 100, 52, (max_text_w - 18) // 2
     draw.rounded_rectangle([text_x, pill_y, text_x + pill_w, pill_y + pill_h], radius=15, fill=(255, 255, 255, 18), outline=(255, 255, 255, 45), width=1)
     draw.text((text_x + 15, pill_y + 14), wrap_and_truncate(draw, f"Views : {_clean_text(views, 'YouTube')}", font_meta, pill_w - 26, 1)[0], fill=(235, 235, 245, 255), font=font_meta)
@@ -218,7 +210,6 @@ def _render_sync(thumb_path: Path, out_path: str, title: str, duration: str, vie
     dur_str = _clean_text(duration, "LIVE")
     draw.text((dur_box_x + 15, pill_y + 14), wrap_and_truncate(draw, f"Duration : {dur_str if dur_str != 'None' else 'LIVE'}", font_meta, pill_w - 26, 1)[0], fill=(235, 235, 245, 255), font=font_meta)
 
-    # Progress Bar
     bar_y, bar_w = pill_y + 95, max_text_w
     draw.rounded_rectangle([text_x, bar_y, text_x + bar_w, bar_y + 8], radius=4, fill=(255, 255, 255, 40))
     prog_w = int(bar_w * 0.38)
@@ -251,9 +242,23 @@ def _get_cached_queue_info(videoid: str) -> tuple:
     except Exception: pass
     return None, None, None
 
+async def _download_fallback_pfp():
+    if not DEFAULT_THUMB_FILE.exists():
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(CUSTOM_FALLBACK_URL) as resp:
+                    if resp.status == 200:
+                        data = await resp.read()
+                        async with aiofiles.open(DEFAULT_THUMB_FILE, "wb") as f:
+                            await f.write(data)
+        except Exception: pass
+
 async def gen_thumb(videoid: str) -> str:
+    # Ensure custom PFP is downloaded for fallback
+    await _download_fallback_pfp()
+
     clean_id = _extract_clean_vidid(videoid)
-    out_path = f"cache/{clean_id}_v8_square.png"
+    out_path = f"cache/{clean_id}_v9_square.png"
     if os.path.isfile(out_path): return out_path
 
     q_title, q_dur, q_user = _get_cached_queue_info(clean_id)
@@ -280,7 +285,6 @@ async def gen_thumb(videoid: str) -> str:
     title, duration, channel = title or "Music Stream", duration or "LIVE", channel or "YouTube"
 
     hd_urls = [
-        f"https://i.ytimg.com/vi/{clean_id}/maxresdefault.jpg",
         f"https://i.ytimg.com/vi/{clean_id}/hqdefault.jpg",
     ]
 
@@ -302,7 +306,7 @@ async def gen_thumb(videoid: str) -> str:
         final_img = await asyncio.to_thread(_render_sync, thumb_path, out_path, title, duration, views, channel, requested_by, bot_display)
         return final_img
     except Exception:
-        return getattr(config, "STREAM_IMG_URL", DEFAULT_THUMB)
+        return CUSTOM_FALLBACK_URL
     finally:
         if thumb_path.exists():
             try: os.remove(thumb_path)

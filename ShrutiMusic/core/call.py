@@ -26,9 +26,11 @@ from ShrutiMusic.utils.stream.autoclear import auto_clean
 from ShrutiMusic.utils.thumbnails import gen_thumb
 from strings import get_string
 
-# 🤖 SMART AUTO-PLAY MEMORY & LIMITERS
+# 🤖 SMART AUTO-PLAY MEMORY, LIMITERS & AUTOEND VARIABLES
 autoplay_limits = {} 
 play_history = {}
+autoend = {}
+counter = {}
 
 async def _clear_(chat_id):
     db[chat_id] = []

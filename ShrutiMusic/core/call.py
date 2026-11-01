@@ -26,17 +26,14 @@ from ShrutiMusic.utils.stream.autoclear import auto_clean
 from ShrutiMusic.utils.thumbnails import gen_thumb
 from strings import get_string
 
-autoend = {}
-counter = {}
-
-# ⚡ SMART AUTO-PLAY RAM TRACKERS (To save API Limits)
+# 🤖 SMART AUTO-PLAY MEMORY & LIMITERS
 autoplay_limits = {} 
-last_played_song = {}
+play_history = {}
 
 async def _clear_(chat_id):
     db[chat_id] = []
     autoplay_limits.pop(chat_id, None)
-    last_played_song.pop(chat_id, None)
+    play_history.pop(chat_id, None)
     await remove_active_video_chat(chat_id)
     await remove_active_chat(chat_id)
 
@@ -53,7 +50,6 @@ class Call(PyTgCalls):
         self.userbot5 = Client(name="NandAss5", api_id=config.API_ID, api_hash=config.API_HASH, session_string=str(config.STRING5))
         self.five = PyTgCalls(self.userbot5, cache_duration=100)
 
-    # (Keep all your existing pause_stream, stop_stream, etc. identical until change_stream)
     async def pause_stream(self, chat_id: int):
         assistant = await group_assistant(self, chat_id)
         await assistant.pause_stream(chat_id)
@@ -120,25 +116,29 @@ class Call(PyTgCalls):
                 await set_loop(chat_id, loop)
                 popped = check[0]
 
+            # Register played song to memory
             if popped:
-                last_played_song[chat_id] = popped.get("vidid")
+                if chat_id not in play_history:
+                    play_history[chat_id] = []
+                play_history[chat_id].append(popped.get("vidid"))
                 
             await auto_clean(popped)
 
-            # ⚡ SMART AUTO-PLAY LOGIC IMPLEMENTATION
+            # 🤖 AI AUTO-PLAY LOGIC TRIGGER
             if not check:
                 auto_count = autoplay_limits.get(chat_id, 0)
-                last_vid = last_played_song.get(chat_id)
+                history_list = play_history.get(chat_id, [])
+                last_vid = history_list[-1] if history_list else None
                 
-                # Limit: 5 auto-play songs per VC session to save 100/day API limit
+                # Check Limit (Max 5 API calls per VC session)
                 if auto_count < 5 and last_vid:
-                    rel_id, rel_title, rel_dur = await YouTube.get_related(last_vid)
+                    rel_id, rel_title, rel_dur = await YouTube.get_autoplay(last_vid, history_list)
                     if rel_id:
                         db[chat_id] = [{
                             "vidid": rel_id,
                             "title": rel_title,
                             "dur": rel_dur,
-                            "by": "AutoPlay 🤖",
+                            "by": "AutoPlay AI 🤖",
                             "chat_id": chat_id,
                             "streamtype": "audio",
                             "file": f"vid_{rel_id}",
@@ -159,7 +159,7 @@ class Call(PyTgCalls):
                 return await client.leave_group_call(chat_id)
             except Exception: return
         
-        # Continuation of streaming logic
+        # Stream Next Song
         queued = check[0]["file"]
         language = await get_lang(chat_id)
         _ = get_string(language)

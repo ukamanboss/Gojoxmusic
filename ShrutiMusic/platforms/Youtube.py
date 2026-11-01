@@ -22,26 +22,17 @@ def time_to_seconds(time):
 
 async def download_song(link: str) -> str:
     video_id = link.split("v=")[-1].split("&")[0] if "v=" in link else link
-    if not video_id or len(video_id) < 3:
-        return None
+    if not video_id or len(video_id) < 3: return None
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     file_path = os.path.join(DOWNLOAD_DIR, f"{video_id}.mp3")
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        return file_path
+    if os.path.exists(file_path) and os.path.getsize(file_path) > 0: return file_path
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{API_URL}/download",
-                params={"url": video_id, "type": "audio", "api_key": API_KEY},
-                timeout=aiohttp.ClientTimeout(total=300)
-            ) as resp:
-                if resp.status != 200:
-                    return None
+            async with session.get(f"{API_URL}/download", params={"url": video_id, "type": "audio", "api_key": API_KEY}, timeout=aiohttp.ClientTimeout(total=300)) as resp:
+                if resp.status != 200: return None
                 with open(file_path, "wb") as f:
-                    async for chunk in resp.content.iter_chunked(131072):
-                        f.write(chunk)
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-            return file_path
+                    async for chunk in resp.content.iter_chunked(131072): f.write(chunk)
+        if os.path.exists(file_path) and os.path.getsize(file_path) > 0: return file_path
         return None
     except Exception:
         if os.path.exists(file_path):
@@ -51,26 +42,17 @@ async def download_song(link: str) -> str:
 
 async def download_video(link: str) -> str:
     video_id = link.split("v=")[-1].split("&")[0] if "v=" in link else link
-    if not video_id or len(video_id) < 3:
-        return None
+    if not video_id or len(video_id) < 3: return None
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     file_path = os.path.join(DOWNLOAD_DIR, f"{video_id}.mp4")
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        return file_path
+    if os.path.exists(file_path) and os.path.getsize(file_path) > 0: return file_path
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{API_URL}/download",
-                params={"url": video_id, "type": "video", "api_key": API_KEY},
-                timeout=aiohttp.ClientTimeout(total=600)
-            ) as resp:
-                if resp.status != 200:
-                    return None
+            async with session.get(f"{API_URL}/download", params={"url": video_id, "type": "video", "api_key": API_KEY}, timeout=aiohttp.ClientTimeout(total=600)) as resp:
+                if resp.status != 200: return None
                 with open(file_path, "wb") as f:
-                    async for chunk in resp.content.iter_chunked(131072):
-                        f.write(chunk)
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-            return file_path
+                    async for chunk in resp.content.iter_chunked(131072): f.write(chunk)
+        if os.path.exists(file_path) and os.path.getsize(file_path) > 0: return file_path
         return None
     except Exception:
         if os.path.exists(file_path):
@@ -83,22 +65,30 @@ class YouTubeAPI:
         self.base = "https://www.youtube.com/watch?v="
         self.regex = r"(?:youtube\.com|youtu\.be)"
         self.listbase = "https://youtube.com/playlist?list="
-        self.reg = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
-    async def get_related(self, videoid: str):
-        """Fetches a related/similar song for Smart Auto-Play"""
+    async def get_autoplay(self, videoid: str, history: list):
+        """AI Vibe Matcher: Finds related artist/vibe without repeating songs."""
         try:
-            results = VideosSearch(f"https://www.youtube.com/watch?v={videoid}", limit=1)
+            results = VideosSearch(videoid, limit=1)
             res_data = await results.next()
-            title = res_data["result"][0]["title"]
+            current_title = res_data["result"][0]["title"]
             
-            search_term = " ".join(title.split()[:3]) + " Official Audio"
-            rel_search = VideosSearch(search_term, limit=6)
+            # Clean title to extract pure artist/vibe keywords
+            clean_title = re.sub(r'\[.*?\]|\(.*?\)|\{.*?\}|official|video|lyrical|audio', '', current_title, flags=re.IGNORECASE).strip()
+            keywords = " ".join(clean_title.split()[:3])
+            
+            search_query = f"{keywords} hits"
+            rel_search = VideosSearch(search_query, limit=15)
             rel_data = await rel_search.next()
             
             for item in rel_data.get("result", []):
-                if item["id"] != videoid and int(time_to_seconds(item.get("duration", "0:00"))) < 600:
-                    return item["id"], item["title"], item["duration"]
+                vid = item["id"]
+                if vid not in history and vid != videoid:
+                    dur_str = item.get("duration", "0:00")
+                    sec = int(time_to_seconds(dur_str))
+                    # Avoid songs shorter than 2 mins or longer than 7 mins (mixes)
+                    if 120 <= sec <= 420:
+                        return vid, item["title"], dur_str
             return None, None, None
         except Exception:
             return None, None, None
@@ -118,8 +108,7 @@ class YouTubeAPI:
                         return text[entity.offset: entity.offset + entity.length]
             elif message.caption_entities:
                 for entity in message.caption_entities:
-                    if entity.type == MessageEntityType.TEXT_LINK:
-                        return entity.url
+                    if entity.type == MessageEntityType.TEXT_LINK: return entity.url
         return None
 
     async def details(self, link: str, videoid: Union[bool, str] = None):
@@ -138,22 +127,19 @@ class YouTubeAPI:
         if videoid: link = self.base + link
         if "&" in link: link = link.split("&")[0]
         results = VideosSearch(link, limit=1)
-        for result in (await results.next())["result"]:
-            return result["title"]
+        for result in (await results.next())["result"]: return result["title"]
 
     async def duration(self, link: str, videoid: Union[bool, str] = None):
         if videoid: link = self.base + link
         if "&" in link: link = link.split("&")[0]
         results = VideosSearch(link, limit=1)
-        for result in (await results.next())["result"]:
-            return result["duration"]
+        for result in (await results.next())["result"]: return result["duration"]
 
     async def thumbnail(self, link: str, videoid: Union[bool, str] = None):
         if videoid: link = self.base + link
         if "&" in link: link = link.split("&")[0]
         results = VideosSearch(link, limit=1)
-        for result in (await results.next())["result"]:
-            return result["thumbnails"][0]["url"].split("?")[0]
+        for result in (await results.next())["result"]: return result["thumbnails"][0]["url"].split("?")[0]
 
     async def video(self, link: str, videoid: Union[bool, str] = None):
         if videoid: link = self.base + link
@@ -162,8 +148,7 @@ class YouTubeAPI:
             downloaded_file = await download_video(link)
             if downloaded_file: return 1, downloaded_file
             return 0, "Video download failed"
-        except Exception as e:
-            return 0, f"Video download error: {e}"
+        except Exception as e: return 0, f"Video download error: {e}"
 
     async def playlist(self, link, limit, user_id, videoid: Union[bool, str] = None):
         if videoid: link = self.listbase + link

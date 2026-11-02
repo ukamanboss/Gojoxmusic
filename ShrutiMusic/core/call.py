@@ -26,11 +26,12 @@ from ShrutiMusic.utils.stream.autoclear import auto_clean
 from ShrutiMusic.utils.thumbnails import gen_thumb
 from strings import get_string
 
-# 🤖 SMART AUTO-PLAY MEMORY, LIMITERS & AUTOEND VARIABLES
+# 🤖 SMART AUTO-PLAY MEMORY, LIMITERS & ALL CORE EXPORTS
 autoplay_limits = {} 
 play_history = {}
 autoend = {}
 counter = {}
+autoclean = []  # <-- Added missing export for background plugins
 
 async def _clear_(chat_id):
     db[chat_id] = []
@@ -118,7 +119,6 @@ class Call(PyTgCalls):
                 await set_loop(chat_id, loop)
                 popped = check[0]
 
-            # Register played song to memory
             if popped:
                 if chat_id not in play_history:
                     play_history[chat_id] = []
@@ -132,7 +132,6 @@ class Call(PyTgCalls):
                 history_list = play_history.get(chat_id, [])
                 last_vid = history_list[-1] if history_list else None
                 
-                # Check Limit (Max 5 API calls per VC session)
                 if auto_count < 5 and last_vid:
                     rel_id, rel_title, rel_dur = await YouTube.get_autoplay(last_vid, history_list)
                     if rel_id:
@@ -161,7 +160,6 @@ class Call(PyTgCalls):
                 return await client.leave_group_call(chat_id)
             except Exception: return
         
-        # Stream Next Song
         queued = check[0]["file"]
         language = await get_lang(chat_id)
         _ = get_string(language)

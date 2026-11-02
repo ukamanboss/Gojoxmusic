@@ -12,7 +12,7 @@ from pytgcalls import PyTgCalls, StreamType
 from pytgcalls.exceptions import AlreadyJoinedError, NoActiveGroupCall, TelegramServerError
 from pytgcalls.types import Update
 from pytgcalls.types.input_stream import AudioPiped, AudioVideoPiped
-from pytgcalls.types.input_stream.quality import MediumQualityAudio, MediumQualityVideo
+from pytgcalls.types.input_stream.quality import MediumQualityAudio, LowQualityVideo
 from pytgcalls.types.stream import StreamAudioEnded
 
 import config
@@ -31,7 +31,7 @@ autoplay_limits = {}
 play_history = {}
 autoend = {}
 counter = {}
-autoclean = []  # <-- Added missing export for background plugins
+autoclean = []
 
 async def _clear_(chat_id):
     db[chat_id] = []
@@ -92,12 +92,14 @@ class Call(PyTgCalls):
 
     async def skip_stream(self, chat_id: int, link: str, video: Union[bool, str] = None, image: Union[bool, str] = None):
         assistant = await group_assistant(self, chat_id)
-        stream = AudioVideoPiped(link, audio_parameters=MediumQualityAudio(), video_parameters=MediumQualityVideo()) if video else AudioPiped(link, audio_parameters=MediumQualityAudio())
+        # 🔥 Quality Changed to LowQualityVideo() for Zero Lag
+        stream = AudioVideoPiped(link, audio_parameters=MediumQualityAudio(), video_parameters=LowQualityVideo()) if video else AudioPiped(link, audio_parameters=MediumQualityAudio())
         await assistant.change_stream(chat_id, stream)
 
     async def join_call(self, chat_id: int, original_chat_id: int, link, video: Union[bool, str] = None, image: Union[bool, str] = None):
         assistant = await group_assistant(self, chat_id)
-        stream = AudioVideoPiped(link, audio_parameters=MediumQualityAudio(), video_parameters=MediumQualityVideo()) if video else AudioPiped(link, audio_parameters=MediumQualityAudio())
+        # 🔥 Quality Changed to LowQualityVideo() for Zero Lag
+        stream = AudioVideoPiped(link, audio_parameters=MediumQualityAudio(), video_parameters=LowQualityVideo()) if video else AudioPiped(link, audio_parameters=MediumQualityAudio())
         try:
             await assistant.join_group_call(chat_id, stream, stream_type=StreamType().pulse_stream)
         except NoActiveGroupCall: raise AssistantErr("No Active VC")
@@ -180,7 +182,8 @@ class Call(PyTgCalls):
             except Exception:
                 return await mystic.edit_text("❌ **Fᴀɪʟᴇᴅ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ ɴᴇxᴛ sᴏɴɢ.**")
             
-            stream = AudioVideoPiped(file_path, audio_parameters=MediumQualityAudio(), video_parameters=MediumQualityVideo()) if video else AudioPiped(file_path, audio_parameters=MediumQualityAudio())
+            # 🔥 Quality Changed to LowQualityVideo() for Zero Lag
+            stream = AudioVideoPiped(file_path, audio_parameters=MediumQualityAudio(), video_parameters=LowQualityVideo()) if video else AudioPiped(file_path, audio_parameters=MediumQualityAudio())
             
             try:
                 await client.change_stream(chat_id, stream)
